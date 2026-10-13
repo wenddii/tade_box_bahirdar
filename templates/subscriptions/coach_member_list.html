@@ -1,0 +1,148 @@
+{% extends 'base.html' %}
+
+{% block title %}Club Boxers Roster - {{ club_settings.club_name }}{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+
+    <!-- Header Banner -->
+    <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 sm:p-8 shadow-xl flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div>
+            <h1 class="text-3xl font-bold font-boxing tracking-wide uppercase text-white">
+                Club Boxers Directory
+            </h1>
+            <p class="text-sm text-slate-400 mt-1">
+                Manage registered club members, view current subscription status, and update accounts.
+            </p>
+        </div>
+        <div class="flex-shrink-0">
+            <a href="{% url 'coach_member_create' %}" class="inline-flex items-center gap-2 px-5 py-3 rounded-xl bg-red-600 hover:bg-red-700 text-white font-bold text-sm uppercase tracking-wide shadow-lg shadow-red-900/40 transition-colors">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+                Add New Boxer
+            </a>
+        </div>
+    </div>
+
+    <!-- Filters & Search Toolbar -->
+    <div class="bg-slate-900/80 border border-slate-800 rounded-2xl p-4 shadow-lg flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <!-- Status Filter Pills -->
+        <div class="flex flex-wrap items-center gap-1.5 text-xs">
+            <a href="?status=ALL{% if search_query %}&q={{ search_query }}{% endif %}" class="px-3 py-1.5 rounded-lg font-semibold transition-colors {% if status_filter == 'ALL' %}bg-red-600 text-white{% else %}bg-slate-800 text-slate-400 hover:text-white{% endif %}">
+                All ({{ member_data|length }})
+            </a>
+            <a href="?status=PAID{% if search_query %}&q={{ search_query }}{% endif %}" class="px-3 py-1.5 rounded-lg font-semibold transition-colors {% if status_filter == 'PAID' %}bg-emerald-600 text-white{% else %}bg-slate-800 text-slate-400 hover:text-white{% endif %}">
+                Paid
+            </a>
+            <a href="?status=PENDING{% if search_query %}&q={{ search_query }}{% endif %}" class="px-3 py-1.5 rounded-lg font-semibold transition-colors {% if status_filter == 'PENDING' %}bg-amber-600 text-white{% else %}bg-slate-800 text-slate-400 hover:text-white{% endif %}">
+                Pending
+            </a>
+            <a href="?status=UNPAID{% if search_query %}&q={{ search_query }}{% endif %}" class="px-3 py-1.5 rounded-lg font-semibold transition-colors {% if status_filter == 'UNPAID' %}bg-red-900/80 text-red-200 border border-red-700{% else %}bg-slate-800 text-slate-400 hover:text-white{% endif %}">
+                Unpaid
+            </a>
+            <a href="?status=INACTIVE{% if search_query %}&q={{ search_query }}{% endif %}" class="px-3 py-1.5 rounded-lg font-semibold transition-colors {% if status_filter == 'INACTIVE' %}bg-slate-700 text-white{% else %}bg-slate-800 text-slate-400 hover:text-white{% endif %}">
+                Inactive
+            </a>
+        </div>
+
+        <!-- Search Form -->
+        <form method="get" class="flex items-center gap-2 max-w-sm w-full">
+            <input type="hidden" name="status" value="{{ status_filter }}">
+            <div class="relative w-full">
+                <input type="text" name="q" value="{{ search_query }}" placeholder="Search by name, username, or phone..."
+                    class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2 text-xs text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-red-500">
+            </div>
+            <button type="submit" class="px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold">
+                Search
+            </button>
+            {% if search_query %}
+                <a href="?status={{ status_filter }}" class="p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-400 text-xs" title="Clear search">✕</a>
+            {% endif %}
+        </form>
+    </div>
+
+    <!-- Members Table -->
+    <div class="bg-slate-900 border border-slate-800 rounded-2xl shadow-xl overflow-hidden">
+        <div class="overflow-x-auto">
+            <table class="w-full text-left text-sm">
+                <thead>
+                    <tr class="text-xs uppercase text-slate-400 bg-slate-950/60 border-b border-slate-800">
+                        <th class="py-3.5 px-6 font-semibold">Boxer Name</th>
+                        <th class="py-3.5 px-6 font-semibold">Phone</th>
+                        <th class="py-3.5 px-6 font-semibold">{{ current_month|date:"F Y" }} Status</th>
+                        <th class="py-3.5 px-6 font-semibold">Membership</th>
+                        <th class="py-3.5 px-6 font-semibold text-right">Actions</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-800/60">
+                    {% if member_data %}
+                        {% for item in member_data %}
+                        <tr class="hover:bg-slate-800/40 transition-colors">
+                            <td class="py-4 px-6">
+                                <div class="flex items-center gap-3">
+                                    <div class="w-9 h-9 rounded-full bg-slate-800 border border-slate-700 flex items-center justify-center font-bold text-xs text-slate-300">
+                                        {{ item.profile.display_name|slice:":1" }}
+                                    </div>
+                                    <div>
+                                        <a href="{% url 'coach_member_detail' item.profile.id %}" class="font-bold text-white hover:text-red-400 transition-colors block">
+                                            {{ item.profile.display_name }}
+                                        </a>
+                                        <span class="text-xs text-slate-500">@{{ item.profile.user.username }}</span>
+                                    </div>
+                                </div>
+                            </td>
+                            <td class="py-4 px-6 text-xs text-slate-300">
+                                {{ item.profile.phone_number|default:"—" }}
+                            </td>
+                            <td class="py-4 px-6">
+                                {% if item.status == 'PAID' %}
+                                    <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-bold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
+                                        <span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
+                                        Paid
+                                    </span>
+                                {% elif item.status == 'PENDING' %}
+                                    <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-bold bg-amber-500/20 text-amber-400 border border-amber-500/30">
+                                        <span class="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse"></span>
+                                        In Review
+                                    </span>
+                                {% elif item.status == 'UNPAID' %}
+                                    <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-bold bg-red-500/20 text-red-400 border border-red-500/30">
+                                        <span class="w-1.5 h-1.5 rounded-full bg-red-400"></span>
+                                        Unpaid
+                                    </span>
+                                {% else %}
+                                    <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold bg-slate-800 text-slate-400">
+                                        Inactive
+                                    </span>
+                                {% endif %}
+                            </td>
+                            <td class="py-4 px-6">
+                                {% if item.profile.is_active_member %}
+                                    <span class="text-xs font-semibold text-emerald-400">Active</span>
+                                {% else %}
+                                    <span class="text-xs font-semibold text-slate-500">Deactivated</span>
+                                {% endif %}
+                            </td>
+                            <td class="py-4 px-6 text-right space-x-2">
+                                <a href="{% url 'coach_member_detail' item.profile.id %}" class="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold transition-colors">
+                                    View
+                                </a>
+                                <a href="{% url 'coach_member_edit' item.profile.id %}" class="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white text-xs font-semibold transition-colors">
+                                    Edit
+                                </a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    {% else %}
+                        <tr>
+                            <td colspan="5" class="py-12 text-center text-slate-500 text-sm">
+                                No boxers match the search or filter criteria.
+                            </td>
+                        </tr>
+                    {% endif %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+</div>
+{% endblock %}

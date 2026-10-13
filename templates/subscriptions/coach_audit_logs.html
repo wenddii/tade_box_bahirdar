@@ -1,0 +1,83 @@
+{% extends 'base.html' %}
+
+{% block title %}Audit Trail - {{ club_settings.club_name }}{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+
+    <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 sm:p-8 shadow-xl">
+        <h1 class="text-3xl font-bold font-boxing tracking-wide uppercase text-white">
+            Administrative Audit Trail
+        </h1>
+        <p class="text-sm text-slate-400 mt-1">
+            Complete tamper-evident log of payment approvals, rejections, manual adjustments, and member modifications.
+        </p>
+    </div>
+
+    <div class="bg-slate-900 border border-slate-800 rounded-2xl shadow-xl overflow-hidden">
+        <div class="overflow-x-auto">
+            <table class="w-full text-left text-sm">
+                <thead>
+                    <tr class="text-xs uppercase text-slate-400 bg-slate-950/60 border-b border-slate-800">
+                        <th class="py-3.5 px-6 font-semibold">Timestamp</th>
+                        <th class="py-3.5 px-6 font-semibold">Actor</th>
+                        <th class="py-3.5 px-6 font-semibold">Action</th>
+                        <th class="py-3.5 px-6 font-semibold">Target Boxer</th>
+                        <th class="py-3.5 px-6 font-semibold">Details</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-800/60 text-xs">
+                    {% for log in logs %}
+                    <tr class="hover:bg-slate-800/40 transition-colors">
+                        <td class="py-3.5 px-6 font-mono text-slate-400 whitespace-nowrap">
+                            {{ log.timestamp|date:"Y-m-d H:i:s" }}
+                        </td>
+                        <td class="py-3.5 px-6 font-semibold text-white whitespace-nowrap">
+                            {% if log.actor %}
+                                {{ log.actor.username }}
+                            {% else %}
+                                <span class="text-slate-500">System</span>
+                            {% endif %}
+                        </td>
+                        <td class="py-3.5 px-6 whitespace-nowrap">
+                            {% if 'APPROVED' in log.action_type %}
+                                <span class="px-2 py-0.5 rounded font-bold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">Payment Approved</span>
+                            {% elif 'REJECTED' in log.action_type %}
+                                <span class="px-2 py-0.5 rounded font-bold bg-red-500/20 text-red-400 border border-red-500/30">Payment Rejected</span>
+                            {% elif 'STATUS_MODIFIED' in log.action_type %}
+                                <span class="px-2 py-0.5 rounded font-bold bg-amber-500/20 text-amber-400 border border-amber-500/30">Manual Status Override</span>
+                            {% elif 'CREATED' in log.action_type %}
+                                <span class="px-2 py-0.5 rounded font-bold bg-blue-500/20 text-blue-400 border border-blue-500/30">Member Created</span>
+                            {% elif 'DEACTIVATED' in log.action_type %}
+                                <span class="px-2 py-0.5 rounded font-bold bg-slate-700 text-slate-300">Member Deactivated</span>
+                            {% else %}
+                                <span class="px-2 py-0.5 rounded font-bold bg-slate-800 text-slate-400">{{ log.get_action_type_display }}</span>
+                            {% endif %}
+                        </td>
+                        <td class="py-3.5 px-6 text-slate-300 whitespace-nowrap">
+                            {% if log.target_member %}
+                                <a href="{% url 'coach_member_detail' log.target_member.id %}" class="hover:text-red-400 font-semibold">
+                                    {{ log.target_member.display_name }}
+                                </a>
+                            {% else %}
+                                —
+                            {% endif %}
+                        </td>
+                        <td class="py-3.5 px-6 text-slate-300">
+                            {{ log.details }}
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="5" class="py-12 text-center text-slate-500">
+                            No audit log entries recorded yet.
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+</div>
+{% endblock %}

@@ -1,0 +1,124 @@
+{% extends 'base.html' %}
+
+{% block title %}Submit Proof of Payment - {{ club_settings.club_name }}{% endblock %}
+
+{% block content %}
+<div class="max-w-3xl mx-auto space-y-6">
+
+    <!-- Header Banner -->
+    <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 sm:p-8 shadow-xl">
+        <div class="flex items-center gap-3 text-red-500 mb-2">
+            <a href="{% url 'member_dashboard' %}" class="text-xs text-slate-400 hover:text-white flex items-center gap-1 font-semibold uppercase tracking-wider">
+                &larr; Back to Dashboard
+            </a>
+        </div>
+        <h1 class="text-3xl font-bold font-boxing tracking-wide uppercase text-white">
+            Submit Payment Proof for {{ subscription.month_display }}
+        </h1>
+        <p class="text-sm text-slate-400 mt-1">
+            Transfer your monthly fee of <strong class="text-white">{{ subscription.amount_due }} {{ club_settings.currency_symbol }}</strong> and upload your mobile receipt screenshot below for Coach Tade's verification.
+        </p>
+    </div>
+
+    <!-- Payment Bank Accounts Accordion / Quick Reference -->
+    <div class="bg-slate-900/80 border border-slate-800 rounded-2xl p-6 shadow-lg">
+        <h2 class="text-sm font-semibold uppercase tracking-wider text-slate-300 flex items-center gap-2 mb-3">
+            <svg class="w-4 h-4 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"/></svg>
+            Tade Boxing Club Official Payment Channels
+        </h2>
+        <div class="p-4 bg-slate-950/80 border border-slate-800/80 rounded-xl text-xs font-mono text-slate-200 whitespace-pre-line leading-relaxed">
+{{ club_settings.payment_instructions }}
+        </div>
+    </div>
+
+    <!-- Rejection Alert if Resubmitting -->
+    {% if latest_submission and latest_submission.status == 'REJECTED' %}
+    <div class="bg-red-950/80 border border-red-700/80 rounded-2xl p-4 text-sm text-red-200">
+        <div class="font-bold text-red-100 mb-1">Feedback on Previous Submission:</div>
+        <div class="italic bg-black/40 p-2.5 rounded-lg border border-red-900/60">{{ latest_submission.rejection_reason }}</div>
+        <div class="text-xs text-red-300 mt-2">Please ensure your new screenshot clearly shows the recipient, transfer amount, and transaction ID.</div>
+    </div>
+    {% endif %}
+
+    <!-- Upload Form -->
+    <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 sm:p-8 shadow-xl">
+        <form method="post" enctype="multipart/form-data" class="space-y-6">
+            {% csrf_token %}
+
+            <!-- Screenshot File Input -->
+            <div>
+                <label for="payment-screenshot-input" class="block text-sm font-semibold text-slate-200 mb-2">
+                    Payment Screenshot / Receipt Image <span class="text-red-500">*</span>
+                </label>
+                <div class="mt-1">
+                    {{ form.screenshot }}
+                </div>
+                {% if form.screenshot.errors %}
+                    <p class="text-xs text-red-400 mt-1.5 font-medium">{{ form.screenshot.errors.0 }}</p>
+                {% endif %}
+                <p class="text-xs text-slate-400 mt-2">
+                    Supported formats: JPEG, PNG, WebP. Maximum file size: 5 MB.
+                </p>
+
+                <!-- Live Image Preview Container -->
+                <div id="preview-container" class="hidden mt-4 p-3 bg-slate-950 border border-slate-800 rounded-xl">
+                    <span class="text-xs font-semibold text-slate-400 uppercase tracking-wider block mb-2">Screenshot Preview:</span>
+                    <div class="flex items-center justify-center bg-black/50 rounded-lg p-2 max-h-80 overflow-hidden">
+                        <img id="image-preview" src="#" alt="Screenshot preview" class="max-h-72 object-contain rounded-md shadow-md">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Optional Transaction Reference -->
+            <div>
+                <label for="payment-tx-ref-input" class="block text-sm font-semibold text-slate-200 mb-2">
+                    Transaction Reference / ID <span class="text-slate-500 text-xs font-normal">(Optional)</span>
+                </label>
+                {{ form.transaction_reference }}
+                {% if form.transaction_reference.errors %}
+                    <p class="text-xs text-red-400 mt-1.5 font-medium">{{ form.transaction_reference.errors.0 }}</p>
+                {% endif %}
+                <p class="text-xs text-slate-400 mt-2">
+                    Helps Coach Tade locate and verify your transfer faster.
+                </p>
+            </div>
+
+            <!-- Notice & Submit Button -->
+            <div class="pt-4 border-t border-slate-800 flex flex-col sm:flex-row items-center justify-between gap-4">
+                <span class="text-xs text-slate-400">
+                    A screenshot submission alone will mark your status as <strong class="text-amber-400">Pending</strong> until the coach approves it.
+                </span>
+                <button type="submit" class="w-full sm:w-auto px-8 py-3.5 bg-gradient-to-r from-red-600 to-red-700 hover:from-red-500 hover:to-red-600 text-white font-bold text-sm rounded-xl shadow-xl shadow-red-900/40 hover:shadow-red-900/60 transition-all uppercase tracking-wide">
+                    Submit Payment Proof
+                </button>
+            </div>
+        </form>
+    </div>
+
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    const input = document.getElementById('payment-screenshot-input');
+    const previewContainer = document.getElementById('preview-container');
+    const previewImg = document.getElementById('image-preview');
+
+    if (input) {
+        input.addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(event) {
+                    previewImg.src = event.target.result;
+                    previewContainer.classList.remove('hidden');
+                };
+                reader.readAsDataURL(file);
+            } else {
+                previewContainer.classList.add('hidden');
+                previewImg.src = '#';
+            }
+        });
+    }
+</script>
+{% endblock %}

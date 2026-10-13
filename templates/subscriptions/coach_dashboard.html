@@ -1,0 +1,194 @@
+{% extends 'base.html' %}
+
+{% block title %}Coach Dashboard - {{ club_settings.club_name }}{% endblock %}
+
+{% block content %}
+<div class="space-y-8">
+
+    <!-- Header Banner -->
+    <div class="bg-gradient-to-r from-slate-900 via-slate-900 to-slate-950 border border-slate-800 rounded-3xl p-6 sm:p-8 shadow-2xl relative overflow-hidden">
+        <div class="absolute -right-8 -top-8 w-60 h-60 bg-red-600/10 rounded-full blur-3xl pointer-events-none"></div>
+
+        <div class="flex flex-col md:flex-row md:items-center justify-between gap-6">
+            <div>
+                <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-red-950 border border-red-800 text-red-400 text-xs font-semibold uppercase tracking-wider mb-2">
+                    <span class="w-2 h-2 rounded-full bg-red-500"></span>
+                    Head Coach Portal
+                </div>
+                <h1 class="text-3xl sm:text-4xl font-bold font-boxing tracking-wide uppercase text-white">
+                    Coach Tade - Club Dashboard
+                </h1>
+                <p class="text-sm text-slate-400 mt-1">
+                    Monthly overview for <strong class="text-white">{{ current_month|date:"F Y" }}</strong>. Stop manual spreadsheet chasing.
+                </p>
+            </div>
+
+            <!-- Quick Action Buttons -->
+            <div class="flex flex-wrap items-center gap-3">
+                <a href="{% url 'coach_member_create' %}" class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-red-600 hover:bg-red-700 text-white font-bold text-xs uppercase tracking-wide shadow-lg shadow-red-900/40 transition-colors">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+                    Add Boxer
+                </a>
+                <a href="{% url 'club_status_page' %}" class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 font-semibold text-xs transition-colors">
+                    <svg class="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+                    Public Roster
+                </a>
+                <a href="{% url 'coach_club_settings' %}" class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 font-semibold text-xs transition-colors">
+                    <svg class="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+                    Settings
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- KPI Summary Cards -->
+    <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <!-- Active Boxers -->
+        <a href="{% url 'coach_member_list' %}" class="bg-slate-900 border border-slate-800 hover:border-slate-700 rounded-2xl p-5 shadow-lg transition-all group">
+            <div class="flex items-center justify-between text-slate-400 mb-2">
+                <span class="text-xs font-semibold uppercase tracking-wider">Active Boxers</span>
+                <svg class="w-5 h-5 text-slate-500 group-hover:text-white transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
+            </div>
+            <div class="text-3xl font-bold font-boxing tracking-wide text-white">{{ active_count }}</div>
+            <div class="text-xs text-slate-500 mt-1">Manage club roster &rarr;</div>
+        </a>
+
+        <!-- Paid Members -->
+        <a href="{% url 'coach_member_list' %}?status=PAID" class="bg-emerald-950/20 border border-emerald-800/40 hover:border-emerald-700/60 rounded-2xl p-5 shadow-lg transition-all group">
+            <div class="flex items-center justify-between text-emerald-400 mb-2">
+                <span class="text-xs font-semibold uppercase tracking-wider">Paid Boxers</span>
+                <span class="w-2.5 h-2.5 rounded-full bg-emerald-500"></span>
+            </div>
+            <div class="text-3xl font-bold font-boxing tracking-wide text-emerald-300">{{ paid_count }}</div>
+            <div class="text-xs text-emerald-500/80 mt-1">Fee verified for {{ current_month|date:"M" }}</div>
+        </a>
+
+        <!-- Pending Verification (Urgent) -->
+        <a href="{% url 'coach_pending_submissions' %}" class="bg-amber-950/20 border border-amber-800/50 hover:border-amber-700 rounded-2xl p-5 shadow-lg transition-all group relative">
+            <div class="flex items-center justify-between text-amber-400 mb-2">
+                <span class="text-xs font-semibold uppercase tracking-wider">Pending Review</span>
+                {% if pending_count > 0 %}
+                    <span class="w-2.5 h-2.5 rounded-full bg-amber-500 animate-ping"></span>
+                {% else %}
+                    <span class="w-2.5 h-2.5 rounded-full bg-slate-600"></span>
+                {% endif %}
+            </div>
+            <div class="text-3xl font-bold font-boxing tracking-wide text-amber-300">{{ pending_count }}</div>
+            <div class="text-xs text-amber-400 font-semibold mt-1">Needs verification &rarr;</div>
+        </a>
+
+        <!-- Unpaid Members -->
+        <a href="{% url 'coach_member_list' %}?status=UNPAID" class="bg-red-950/20 border border-red-800/40 hover:border-red-700/60 rounded-2xl p-5 shadow-lg transition-all group">
+            <div class="flex items-center justify-between text-red-400 mb-2">
+                <span class="text-xs font-semibold uppercase tracking-wider">Unpaid</span>
+                <span class="w-2.5 h-2.5 rounded-full bg-red-500"></span>
+            </div>
+            <div class="text-3xl font-bold font-boxing tracking-wide text-red-300">{{ unpaid_count }}</div>
+            <div class="text-xs text-red-500/80 mt-1">Payment outstanding</div>
+        </a>
+    </div>
+
+    <!-- Priority Action Section: Pending Submissions Needing Review -->
+    <div class="bg-slate-900 border border-slate-800 rounded-2xl shadow-xl overflow-hidden">
+        <div class="p-5 border-b border-slate-800 bg-slate-850 flex items-center justify-between">
+            <div class="flex items-center gap-3">
+                <div class="w-8 h-8 rounded-lg bg-amber-500/20 border border-amber-500/40 flex items-center justify-center text-amber-400">
+                    <svg class="w-5 h-5 animate-pulse" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                </div>
+                <div>
+                    <h2 class="text-lg font-bold font-boxing tracking-wide uppercase text-white leading-tight">
+                        Pending Proofs Awaiting Verification
+                    </h2>
+                    <span class="text-xs text-slate-400">Review transfer screenshots and approve or reject</span>
+                </div>
+            </div>
+            <a href="{% url 'coach_pending_submissions' %}" class="text-xs font-semibold text-red-400 hover:text-red-300 transition-colors">
+                View All Pending ({{ pending_count }}) &rarr;
+            </a>
+        </div>
+
+        <div class="divide-y divide-slate-800/80">
+            {% if pending_submissions %}
+                {% for sub in pending_submissions %}
+                <div class="p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 hover:bg-slate-800/40 transition-colors">
+                    <div class="flex items-center gap-4">
+                        <!-- Thumbnail preview -->
+                        <div class="w-14 h-14 rounded-xl bg-slate-950 border border-slate-700 overflow-hidden flex-shrink-0 flex items-center justify-center">
+                            {% if sub.screenshot %}
+                                <img src="{{ sub.screenshot.url }}" alt="Screenshot thumbnail" class="w-full h-full object-cover">
+                            {% else %}
+                                <svg class="w-6 h-6 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+                            {% endif %}
+                        </div>
+
+                        <div>
+                            <div class="flex items-center gap-2">
+                                <a href="{% url 'coach_member_detail' sub.member.id %}" class="text-sm font-bold text-white hover:text-red-400 transition-colors">
+                                    {{ sub.member.display_name }}
+                                </a>
+                                <span class="text-xs px-2 py-0.5 rounded bg-slate-800 text-slate-300 font-semibold">
+                                    {{ sub.subscription.month_display }}
+                                </span>
+                            </div>
+                            <div class="text-xs text-slate-400 mt-1 flex flex-wrap items-center gap-2">
+                                <span>Submitted: {{ sub.submitted_at|date:"M d, H:i" }}</span>
+                                {% if sub.transaction_reference %}
+                                    <span>•</span>
+                                    <span class="font-mono bg-slate-950 px-1.5 py-0.5 rounded text-slate-300">{{ sub.transaction_reference }}</span>
+                                {% endif %}
+                                {% if sub.member.phone_number %}
+                                    <span>•</span>
+                                    <span>{{ sub.member.phone_number }}</span>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="flex items-center gap-3 self-end sm:self-center">
+                        <a href="{% url 'coach_review_submission' sub.id %}" class="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-red-600 hover:bg-red-700 text-white font-bold text-xs uppercase tracking-wide transition-colors shadow-md shadow-red-900/40">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+                            Inspect & Verify
+                        </a>
+                    </div>
+                </div>
+                {% endfor %}
+            {% else %}
+                <div class="p-12 text-center text-slate-500">
+                    <svg class="w-12 h-12 mx-auto text-emerald-500/50 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                    <div class="text-sm font-semibold text-slate-300">No Pending Submissions</div>
+                    <div class="text-xs text-slate-500 mt-1">You are all caught up! No payment proofs currently need verification.</div>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Recent Audit Logs Activity -->
+    {% if recent_audits %}
+    <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl">
+        <div class="flex items-center justify-between pb-4 border-b border-slate-800">
+            <h2 class="text-lg font-bold font-boxing tracking-wide uppercase text-white">
+                Recent Audit Trail
+            </h2>
+            <a href="{% url 'coach_audit_logs' %}" class="text-xs text-red-400 hover:text-red-300 font-semibold transition-colors">
+                Full Audit Log &rarr;
+            </a>
+        </div>
+        <div class="mt-4 divide-y divide-slate-800/60">
+            {% for log in recent_audits %}
+            <div class="py-3 flex flex-col sm:flex-row sm:items-center justify-between gap-1 text-xs">
+                <div class="flex items-center gap-2">
+                    <span class="w-1.5 h-1.5 rounded-full bg-slate-500"></span>
+                    <span class="font-semibold text-white">{{ log.get_action_type_display }}</span>
+                    <span class="text-slate-400">{{ log.details }}</span>
+                </div>
+                <div class="text-slate-500 flex-shrink-0">
+                    {{ log.timestamp|date:"M d, Y H:i" }}
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+
+</div>
+{% endblock %}

@@ -1,0 +1,100 @@
+{% extends 'base.html' %}
+
+{% block title %}Add New Boxer - {{ club_settings.club_name }}{% endblock %}
+
+{% block content %}
+<div class="max-w-2xl mx-auto space-y-6">
+
+    <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 sm:p-8 shadow-xl">
+        <div class="flex items-center gap-3 text-red-500 mb-2">
+            <a href="{% url 'coach_member_list' %}" class="text-xs text-slate-400 hover:text-white flex items-center gap-1 font-semibold uppercase tracking-wider">
+                &larr; Back to Boxers Directory
+            </a>
+        </div>
+        <h1 class="text-3xl font-bold font-boxing tracking-wide uppercase text-white">
+            Register New Boxer
+        </h1>
+        <p class="text-sm text-slate-400 mt-1">
+            Create account credentials and membership profile for a new club boxer.
+        </p>
+    </div>
+
+    <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 sm:p-8 shadow-xl">
+        <form method="post" class="space-y-5">
+            {% csrf_token %}
+
+            <div>
+                <label for="id_display_name" class="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1.5">
+                    Full Boxer Name <span class="text-red-500">*</span>
+                </label>
+                {{ form.display_name }}
+                {% if form.display_name.errors %}
+                    <p class="text-xs text-red-400 mt-1">{{ form.display_name.errors.0 }}</p>
+                {% endif %}
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                    <label for="id_username" class="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1.5">
+                        Username <span class="text-red-500">*</span>
+                    </label>
+                    {{ form.username }}
+                    {% if form.username.errors %}
+                        <p class="text-xs text-red-400 mt-1">{{ form.username.errors.0 }}</p>
+                    {% endif %}
+                </div>
+
+                <div>
+                    <label for="id_password" class="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1.5">
+                        Login Password <span class="text-red-500">*</span>
+                    </label>
+                    {{ form.password }}
+                    {% if form.password.errors %}
+                        <p class="text-xs text-red-400 mt-1">{{ form.password.errors.0 }}</p>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                    <label for="id_phone_number" class="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1.5">
+                        Phone Number
+                    </label>
+                    {{ form.phone_number }}
+                </div>
+
+                <div>
+                    <label for="id_email" class="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1.5">
+                        Email Address
+                    </label>
+                    {{ form.email }}
+                </div>
+            </div>
+
+            <div>
+                <label for="id_emergency_contact" class="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1.5">
+                    Emergency Contact (Name & Phone)
+                </label>
+                {{ form.emergency_contact }}
+            </div>
+
+            <div>
+                <label for="id_notes" class="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1.5">
+                    Training Notes / Weight Category
+                </label>
+                {{ form.notes }}
+            </div>
+
+            <div class="pt-4 border-t border-slate-800 flex justify-end gap-3">
+                <a href="{% url 'coach_member_list' %}" class="px-5 py-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-semibold text-xs uppercase">
+                    Cancel
+                </a>
+                <button type="submit" class="px-6 py-3 rounded-xl bg-red-600 hover:bg-red-700 text-white font-bold text-xs uppercase tracking-wide shadow-lg shadow-red-900/40">
+                    Create Boxer Account
+                </button>
+            </div>
+        </form>
+    </div>
+
+</div>
+{% endblock %}

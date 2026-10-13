@@ -1,0 +1,96 @@
+{% extends 'base.html' %}
+
+{% block title %}Club Settings - {{ club_settings.club_name }}{% endblock %}
+
+{% block content %}
+<div class="max-w-3xl mx-auto space-y-6">
+
+    <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 sm:p-8 shadow-xl">
+        <h1 class="text-3xl font-bold font-boxing tracking-wide uppercase text-white">
+            Club Configuration & Payment Rules
+        </h1>
+        <p class="text-sm text-slate-400 mt-1">
+            Configure the monthly subscription amount, payment deadline day, and official transfer instructions.
+        </p>
+    </div>
+
+    <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 sm:p-8 shadow-xl">
+        <form method="post" class="space-y-6">
+            {% csrf_token %}
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                <div>
+                    <label for="id_club_name" class="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1.5">
+                        Club Name <span class="text-red-500">*</span>
+                    </label>
+                    {{ form.club_name }}
+                </div>
+
+                <div>
+                    <label for="id_location" class="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1.5">
+                        Club Location
+                    </label>
+                    {{ form.location }}
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-5">
+                <div>
+                    <label for="id_monthly_subscription_amount" class="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1.5">
+                        Monthly Subscription (ETB) <span class="text-red-500">*</span>
+                    </label>
+                    {{ form.monthly_subscription_amount }}
+                </div>
+
+                <div>
+                    <label for="id_currency_symbol" class="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1.5">
+                        Currency Symbol
+                    </label>
+                    {{ form.currency_symbol }}
+                </div>
+
+                <div>
+                    <label for="id_payment_deadline_day" class="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1.5">
+                        Deadline Day of Month (1-28) <span class="text-red-500">*</span>
+                    </label>
+                    {{ form.payment_deadline_day }}
+                    <span class="text-[11px] text-slate-500 mt-1 block">Due by this day every month</span>
+                </div>
+            </div>
+
+            <div>
+                <label for="id_payment_instructions" class="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1.5">
+                    Official Payment Transfer Instructions <span class="text-red-500">*</span>
+                </label>
+                {{ form.payment_instructions }}
+                <p class="text-[11px] text-slate-500 mt-1">
+                    Include Commercial Bank of Ethiopia (CBE), Telebirr, Awash Bank, or other account numbers. This text is displayed to boxers on their payment submission page.
+                </p>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                <div>
+                    <label for="id_contact_phone" class="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1.5">
+                        Coach Contact Phone
+                    </label>
+                    {{ form.contact_phone }}
+                </div>
+
+                <div>
+                    <label for="id_contact_email" class="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1.5">
+                        Club Contact Email
+                    </label>
+                    {{ form.contact_email }}
+                </div>
+            </div>
+
+            <div class="pt-4 border-t border-slate-800 flex justify-end">
+                <button type="submit" class="px-6 py-3.5 rounded-xl bg-red-600 hover:bg-red-700 text-white font-bold text-xs uppercase tracking-wide shadow-lg shadow-red-900/40">
+                    Save Club Settings
+                </button>
+            </div>
+        </form>
+    </div>
+
+</div>
+{% endblock %}

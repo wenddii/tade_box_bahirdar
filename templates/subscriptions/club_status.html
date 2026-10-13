@@ -1,0 +1,218 @@
+{% extends 'base.html' %}
+
+{% block title %}Club Subscription Status - {{ current_month|date:"F Y" }} - {{ club_settings.club_name }}{% endblock %}
+
+{% block content %}
+<div class="space-y-8">
+    <!-- Header Banner -->
+    <div class="bg-gradient-to-r from-slate-900 via-slate-900 to-slate-950 border border-slate-800 rounded-2xl p-6 sm:p-8 shadow-xl relative overflow-hidden">
+        <div class="absolute -right-10 -bottom-10 w-48 h-48 bg-red-600/10 rounded-full blur-3xl pointer-events-none"></div>
+
+        <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div>
+                <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-red-950/80 border border-red-800/60 text-red-400 text-xs font-semibold uppercase tracking-wider mb-2">
+                    <span class="w-2 h-2 rounded-full bg-red-500 animate-ping"></span>
+                    Live Monthly Roster
+                </div>
+                <h1 class="text-3xl sm:text-4xl font-bold font-boxing tracking-wide uppercase text-white">
+                    Subscription Status — {{ current_month|date:"F Y" }}
+                </h1>
+                <p class="text-sm text-slate-400 mt-1 max-w-2xl">
+                    Public club accountability board for all active boxers at {{ club_settings.club_name }}. Statuses reset automatically on the 1st of each month.
+                </p>
+            </div>
+
+            {% if user.is_authenticated and not user.is_staff and not user.is_superuser %}
+                <div class="flex-shrink-0">
+                    <a href="{% url 'member_payment_submit' %}" class="inline-flex items-center gap-2 px-5 py-3 rounded-xl bg-red-600 hover:bg-red-700 text-white font-bold text-sm shadow-lg shadow-red-900/40 transition-all">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/></svg>
+                        Submit My Payment Proof
+                    </a>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Summary KPI Cards -->
+    <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <!-- Total Active Members -->
+        <div class="bg-slate-900/90 border border-slate-800 rounded-2xl p-5 shadow-lg">
+            <div class="flex items-center justify-between text-slate-400 mb-2">
+                <span class="text-xs font-semibold uppercase tracking-wider">Active Boxers</span>
+                <svg class="w-5 h-5 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
+            </div>
+            <div class="text-3xl font-bold font-boxing tracking-wide text-white">{{ total_active }}</div>
+            <div class="text-xs text-slate-500 mt-1">Registered club members</div>
+        </div>
+
+        <!-- Paid Members -->
+        <div class="bg-emerald-950/20 border border-emerald-800/40 rounded-2xl p-5 shadow-lg relative overflow-hidden">
+            <div class="flex items-center justify-between text-emerald-400 mb-2">
+                <span class="text-xs font-semibold uppercase tracking-wider">Paid Members</span>
+                <span class="w-2.5 h-2.5 rounded-full bg-emerald-500"></span>
+            </div>
+            <div class="text-3xl font-bold font-boxing tracking-wide text-emerald-300">{{ paid_count }}</div>
+            <div class="text-xs text-emerald-500/80 mt-1">Verified by Coach Tade</div>
+        </div>
+
+        <!-- Pending Verification -->
+        <div class="bg-amber-950/20 border border-amber-800/40 rounded-2xl p-5 shadow-lg relative overflow-hidden">
+            <div class="flex items-center justify-between text-amber-400 mb-2">
+                <span class="text-xs font-semibold uppercase tracking-wider">Pending Review</span>
+                <span class="w-2.5 h-2.5 rounded-full bg-amber-500 animate-pulse"></span>
+            </div>
+            <div class="text-3xl font-bold font-boxing tracking-wide text-amber-300">{{ pending_count }}</div>
+            <div class="text-xs text-amber-500/80 mt-1">Proof uploaded, in review</div>
+        </div>
+
+        <!-- Unpaid Members -->
+        <div class="bg-red-950/20 border border-red-800/40 rounded-2xl p-5 shadow-lg relative overflow-hidden">
+            <div class="flex items-center justify-between text-red-400 mb-2">
+                <span class="text-xs font-semibold uppercase tracking-wider">Unpaid</span>
+                <span class="w-2.5 h-2.5 rounded-full bg-red-500"></span>
+            </div>
+            <div class="text-3xl font-bold font-boxing tracking-wide text-red-300">{{ unpaid_count }}</div>
+            <div class="text-xs text-red-500/80 mt-1">Payment due by {{ club_settings.payment_deadline_day }}th</div>
+        </div>
+    </div>
+
+    <!-- 3 Clearly Separated Status Groups -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+
+        <!-- Column 1: Paid Members -->
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl shadow-xl flex flex-col h-full overflow-hidden">
+            <div class="p-5 border-b border-slate-800/80 bg-emerald-950/30 flex items-center justify-between">
+                <div class="flex items-center gap-2.5">
+                    <div class="w-7 h-7 rounded-lg bg-emerald-500/20 border border-emerald-500/40 flex items-center justify-center text-emerald-400">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+                    </div>
+                    <h2 class="text-lg font-bold font-boxing tracking-wide uppercase text-white">
+                        Paid Members
+                    </h2>
+                </div>
+                <span class="px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 text-xs font-bold border border-emerald-500/30">
+                    {{ paid_count }}
+                </span>
+            </div>
+
+            <div class="p-4 flex-grow overflow-y-auto max-h-[550px] divide-y divide-slate-800/60">
+                {% if paid_list %}
+                    {% for m in paid_list %}
+                    <div class="py-3 flex items-center justify-between hover:bg-slate-800/40 px-2 rounded-lg transition-colors">
+                        <div class="flex items-center gap-3">
+                            <div class="w-8 h-8 rounded-full bg-slate-800 border border-slate-700 flex items-center justify-center text-xs font-bold text-slate-300">
+                                {{ m.display_name|slice:":1" }}
+                            </div>
+                            <span class="text-sm font-semibold text-white">
+                                {{ m.display_name }}
+                            </span>
+                        </div>
+                        <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                            <span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
+                            Paid
+                        </span>
+                    </div>
+                    {% endfor %}
+                {% else %}
+                    <div class="py-12 text-center text-slate-500 text-sm">
+                        No members recorded as paid for this month yet.
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Column 2: Pending Verification -->
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl shadow-xl flex flex-col h-full overflow-hidden">
+            <div class="p-5 border-b border-slate-800/80 bg-amber-950/30 flex items-center justify-between">
+                <div class="flex items-center gap-2.5">
+                    <div class="w-7 h-7 rounded-lg bg-amber-500/20 border border-amber-500/40 flex items-center justify-center text-amber-400">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                    </div>
+                    <h2 class="text-lg font-bold font-boxing tracking-wide uppercase text-white">
+                        Pending Verification
+                    </h2>
+                </div>
+                <span class="px-2.5 py-0.5 rounded-full bg-amber-500/20 text-amber-300 text-xs font-bold border border-amber-500/30">
+                    {{ pending_count }}
+                </span>
+            </div>
+
+            <div class="p-4 flex-grow overflow-y-auto max-h-[550px] divide-y divide-slate-800/60">
+                {% if pending_list %}
+                    {% for m in pending_list %}
+                    <div class="py-3 flex items-center justify-between hover:bg-slate-800/40 px-2 rounded-lg transition-colors">
+                        <div class="flex items-center gap-3">
+                            <div class="w-8 h-8 rounded-full bg-slate-800 border border-slate-700 flex items-center justify-center text-xs font-bold text-slate-300">
+                                {{ m.display_name|slice:":1" }}
+                            </div>
+                            <span class="text-sm font-semibold text-white">
+                                {{ m.display_name }}
+                            </span>
+                        </div>
+                        <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-semibold bg-amber-500/10 text-amber-400 border border-amber-500/20">
+                            <span class="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse"></span>
+                            In Review
+                        </span>
+                    </div>
+                    {% endfor %}
+                {% else %}
+                    <div class="py-12 text-center text-slate-500 text-sm">
+                        No submissions currently awaiting verification.
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Column 3: Unpaid Members -->
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl shadow-xl flex flex-col h-full overflow-hidden">
+            <div class="p-5 border-b border-slate-800/80 bg-red-950/30 flex items-center justify-between">
+                <div class="flex items-center gap-2.5">
+                    <div class="w-7 h-7 rounded-lg bg-red-500/20 border border-red-500/40 flex items-center justify-center text-red-400">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                    </div>
+                    <h2 class="text-lg font-bold font-boxing tracking-wide uppercase text-white">
+                        Unpaid Members
+                    </h2>
+                </div>
+                <span class="px-2.5 py-0.5 rounded-full bg-red-500/20 text-red-300 text-xs font-bold border border-red-500/30">
+                    {{ unpaid_count }}
+                </span>
+            </div>
+
+            <div class="p-4 flex-grow overflow-y-auto max-h-[550px] divide-y divide-slate-800/60">
+                {% if unpaid_list %}
+                    {% for m in unpaid_list %}
+                    <div class="py-3 flex items-center justify-between hover:bg-slate-800/40 px-2 rounded-lg transition-colors">
+                        <div class="flex items-center gap-3">
+                            <div class="w-8 h-8 rounded-full bg-slate-800 border border-slate-700 flex items-center justify-center text-xs font-bold text-slate-300">
+                                {{ m.display_name|slice:":1" }}
+                            </div>
+                            <span class="text-sm font-semibold text-slate-200">
+                                {{ m.display_name }}
+                            </span>
+                        </div>
+                        <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-semibold bg-red-500/10 text-red-400 border border-red-500/20">
+                            <span class="w-1.5 h-1.5 rounded-full bg-red-400"></span>
+                            Unpaid
+                        </span>
+                    </div>
+                    {% endfor %}
+                {% else %}
+                    <div class="py-12 text-center text-emerald-400 text-sm font-semibold">
+                        Outstanding! All active members have paid for this month.
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Privacy & Respect Note -->
+    <div class="bg-slate-900/60 border border-slate-800/80 rounded-xl p-4 text-xs text-slate-500 flex items-center gap-3">
+        <svg class="w-5 h-5 text-slate-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+        <span>
+            This public club roster displays only member names and payment status to encourage collective accountability. Private details, transfer screenshots, phone numbers, and transaction IDs are kept strictly private.
+        </span>
+    </div>
+</div>
+{% endblock %}

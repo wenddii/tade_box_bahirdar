@@ -1,0 +1,181 @@
+{% extends 'base.html' %}
+
+{% block title %}Verify Payment - {{ member.display_name }} - {{ club_settings.club_name }}{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+
+    <!-- Back navigation -->
+    <div class="flex items-center justify-between">
+        <a href="{% url 'coach_pending_submissions' %}" class="inline-flex items-center gap-1.5 text-xs text-slate-400 hover:text-white font-semibold uppercase tracking-wider transition-colors">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/></svg>
+            Back to Verifications Queue
+        </a>
+        <span class="text-xs text-slate-500">Submitted on {{ submission.submitted_at|date:"M d, Y H:i" }}</span>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+
+        <!-- Left Column: Screenshot Inspection (7 cols) -->
+        <div class="lg:col-span-7 space-y-4">
+            <div class="bg-slate-900 border border-slate-800 rounded-2xl p-4 sm:p-6 shadow-2xl">
+                <div class="flex items-center justify-between mb-4 pb-3 border-b border-slate-800">
+                    <h2 class="text-sm font-bold uppercase tracking-wider text-slate-300 flex items-center gap-2">
+                        <svg class="w-4 h-4 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+                        Submitted Payment Proof
+                    </h2>
+                    {% if submission.screenshot %}
+                        <a href="{{ submission.screenshot.url }}" target="_blank" class="text-xs text-red-400 hover:text-red-300 font-semibold flex items-center gap-1">
+                            <span>Open Full Size</span>
+                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/></svg>
+                        </a>
+                    {% endif %}
+                </div>
+
+                <!-- Image Preview Area -->
+                <div class="bg-slate-950 rounded-xl p-3 border border-slate-800/80 flex items-center justify-center min-h-[420px] max-h-[620px] overflow-hidden">
+                    {% if submission.screenshot %}
+                        <img src="{{ submission.screenshot.url }}" alt="Proof screenshot" class="max-h-[580px] w-auto max-w-full object-contain rounded-lg shadow-xl cursor-pointer hover:scale-[1.01] transition-transform" onclick="window.open('{{ submission.screenshot.url }}', '_blank')">
+                    {% else %}
+                        <div class="text-center text-slate-500">
+                            <svg class="w-16 h-16 mx-auto mb-2 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+                            <p class="text-sm">Screenshot not found or corrupted.</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Right Column: Boxer Details & Decision Form (5 cols) -->
+        <div class="lg:col-span-5 space-y-6">
+
+            <!-- Boxer Summary Card -->
+            <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl">
+                <div class="flex items-start justify-between">
+                    <div>
+                        <span class="text-xs uppercase tracking-wider font-semibold text-slate-400">Club Boxer</span>
+                        <h1 class="text-2xl font-bold font-boxing tracking-wide text-white uppercase mt-0.5">
+                            {{ member.display_name }}
+                        </h1>
+                        <span class="text-xs text-slate-400">@{{ member.user.username }}</span>
+                    </div>
+                    <span class="px-2.5 py-1 rounded-lg bg-amber-500/20 text-amber-300 text-xs font-bold border border-amber-500/30">
+                        In Review
+                    </span>
+                </div>
+
+                <div class="mt-4 pt-4 border-t border-slate-800/80 space-y-2.5 text-xs">
+                    <div class="flex justify-between">
+                        <span class="text-slate-400">Subscription Month:</span>
+                        <span class="font-bold text-white">{{ subscription.month_display }}</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span class="text-slate-400">Amount Due:</span>
+                        <span class="font-bold text-emerald-400">{{ subscription.amount_due }} {{ club_settings.currency_symbol }}</span>
+                    </div>
+                    {% if submission.transaction_reference %}
+                    <div class="flex justify-between">
+                        <span class="text-slate-400">Tx Reference:</span>
+                        <span class="font-mono text-slate-200 bg-slate-950 px-2 py-0.5 rounded">{{ submission.transaction_reference }}</span>
+                    </div>
+                    {% endif %}
+                    {% if member.phone_number %}
+                    <div class="flex justify-between">
+                        <span class="text-slate-400">Phone:</span>
+                        <span class="text-slate-200">{{ member.phone_number }}</span>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Decision Form Card -->
+            <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-2xl">
+                <h3 class="text-base font-bold font-boxing tracking-wide uppercase text-white mb-4 pb-2 border-b border-slate-800">
+                    Coach Verification Action
+                </h3>
+
+                <form method="post" class="space-y-5" id="review-form">
+                    {% csrf_token %}
+
+                    <!-- Action Radios -->
+                    <div>
+                        <span class="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-2">
+                            Decision:
+                        </span>
+                        <div class="grid grid-cols-2 gap-3">
+                            <label class="flex items-center gap-3 p-3 rounded-xl border cursor-pointer transition-all bg-emerald-950/30 border-emerald-700/50 hover:bg-emerald-950/50">
+                                <input type="radio" name="action" value="APPROVE" checked class="text-emerald-600 focus:ring-emerald-500 w-4 h-4" onchange="toggleRejectionBox(false)">
+                                <div>
+                                    <span class="block text-sm font-bold text-emerald-300">Approve</span>
+                                    <span class="text-[11px] text-emerald-400/80">Mark as Paid</span>
+                                </div>
+                            </label>
+
+                            <label class="flex items-center gap-3 p-3 rounded-xl border cursor-pointer transition-all bg-red-950/30 border-red-700/50 hover:bg-red-950/50">
+                                <input type="radio" name="action" value="REJECT" class="text-red-600 focus:ring-red-500 w-4 h-4" onchange="toggleRejectionBox(true)">
+                                <div>
+                                    <span class="block text-sm font-bold text-red-300">Reject</span>
+                                    <span class="text-[11px] text-red-400/80">Require resubmission</span>
+                                </div>
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- Rejection Reason (shown when Reject is selected) -->
+                    <div id="rejection-box" class="hidden">
+                        <label for="id_rejection_reason" class="block text-xs font-semibold uppercase tracking-wider text-red-400 mb-1.5">
+                            Rejection Reason <span class="text-red-500">*</span>
+                        </label>
+                        {{ form.rejection_reason }}
+                        {% if form.rejection_reason.errors %}
+                            <p class="text-xs text-red-400 mt-1 font-semibold">{{ form.rejection_reason.errors.0 }}</p>
+                        {% endif %}
+                        <p class="text-[11px] text-slate-400 mt-1">
+                            This feedback is shown to the boxer on their dashboard so they know why it was rejected.
+                        </p>
+                    </div>
+
+                    <!-- Optional Admin Internal Note -->
+                    <div>
+                        <label for="id_admin_notes" class="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1">
+                            Internal Note (Optional)
+                        </label>
+                        {{ form.admin_notes }}
+                    </div>
+
+                    <!-- Submit Button -->
+                    <button type="submit" class="w-full py-3.5 px-4 bg-gradient-to-r from-red-600 to-red-700 hover:from-red-500 hover:to-red-600 text-white font-bold text-sm rounded-xl shadow-xl shadow-red-900/40 hover:shadow-red-900/60 transition-all uppercase tracking-wide">
+                        Confirm Verification Decision
+                    </button>
+                </form>
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    function toggleRejectionBox(isReject) {
+        const box = document.getElementById('rejection-box');
+        if (box) {
+            if (isReject) {
+                box.classList.remove('hidden');
+            } else {
+                box.classList.add('hidden');
+            }
+        }
+    }
+
+    // Initialize on page load
+    document.addEventListener('DOMContentLoaded', function() {
+        const checkedAction = document.querySelector('input[name="action"]:checked');
+        if (checkedAction && checkedAction.value === 'REJECT') {
+            toggleRejectionBox(true);
+        }
+    });
+</script>
+{% endblock %}

@@ -1,0 +1,231 @@
+{% extends 'base.html' %}
+
+{% block title %}Boxer Details - {{ member.display_name }} - {{ club_settings.club_name }}{% endblock %}
+
+{% block content %}
+<div class="space-y-8">
+
+    <!-- Top Navigation -->
+    <div class="flex items-center justify-between">
+        <a href="{% url 'coach_member_list' %}" class="inline-flex items-center gap-1.5 text-xs text-slate-400 hover:text-white font-semibold uppercase tracking-wider transition-colors">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/></svg>
+            Back to Boxers Directory
+        </a>
+        <div class="flex items-center gap-2">
+            <a href="{% url 'coach_member_edit' member.id %}" class="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold transition-colors">
+                Edit Boxer Profile
+            </a>
+            <form method="post" action="{% url 'coach_member_toggle_active' member.id %}" onsubmit="return confirm('Are you sure you want to {% if member.is_active_member %}deactivate{% else %}reactivate{% endif %} this member?');">
+                {% csrf_token %}
+                <button type="submit" class="px-4 py-2 rounded-xl text-xs font-semibold transition-colors {% if member.is_active_member %}bg-red-950/80 border border-red-800 text-red-300 hover:bg-red-900{% else %}bg-emerald-950/80 border border-emerald-800 text-emerald-300 hover:bg-emerald-900{% endif %}">
+                    {% if member.is_active_member %}Deactivate Member{% else %}Reactivate Member{% endif %}
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Boxer Profile Card -->
+    <div class="bg-slate-900 border border-slate-800 rounded-3xl p-6 sm:p-8 shadow-2xl relative overflow-hidden">
+        <div class="flex flex-col md:flex-row md:items-center justify-between gap-6">
+            <div class="flex items-center gap-5">
+                <div class="w-16 h-16 rounded-2xl bg-gradient-to-tr from-red-700 to-red-500 flex items-center justify-center font-bold text-2xl text-white shadow-xl shadow-red-900/40">
+                    {{ member.display_name|slice:":1" }}
+                </div>
+                <div>
+                    <div class="flex items-center gap-2">
+                        <h1 class="text-3xl font-bold font-boxing tracking-wide text-white uppercase">
+                            {{ member.display_name }}
+                        </h1>
+                        {% if member.is_active_member %}
+                            <span class="px-2.5 py-0.5 rounded-full text-xs font-bold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">Active</span>
+                        {% else %}
+                            <span class="px-2.5 py-0.5 rounded-full text-xs font-bold bg-slate-800 text-slate-400">Inactive</span>
+                        {% endif %}
+                    </div>
+                    <div class="text-xs text-slate-400 mt-1 flex flex-wrap items-center gap-3">
+                        <span>Username: <strong class="text-slate-300">@{{ member.user.username }}</strong></span>
+                        <span>•</span>
+                        <span>Phone: <strong class="text-slate-300">{{ member.phone_number|default:"—" }}</strong></span>
+                        {% if member.emergency_contact %}
+                            <span>•</span>
+                            <span>Emergency: <strong class="text-slate-300">{{ member.emergency_contact }}</strong></span>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Current Month Status Card -->
+            <div class="bg-slate-950/80 border border-slate-800 rounded-2xl p-4 shadow-lg min-w-[240px]">
+                <div class="flex items-center justify-between mb-1">
+                    <span class="text-xs uppercase tracking-wider font-semibold text-slate-400">{{ current_month|date:"F Y" }}</span>
+                    <a href="{% url 'coach_manual_status_change' current_sub.id %}" class="text-[11px] text-red-400 hover:text-red-300 font-semibold" title="Manually override status">
+                        Change Status
+                    </a>
+                </div>
+                <div class="flex items-center gap-2 mt-1">
+                    {% if current_sub.status == 'PAID' %}
+                        <span class="px-3 py-1 rounded-lg text-xs font-bold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
+                            ✓ PAID
+                        </span>
+                        <span class="text-xs text-slate-400">{{ current_sub.paid_at|date:"M d" }}</span>
+                    {% elif current_sub.status == 'PENDING' %}
+                        <span class="px-3 py-1 rounded-lg text-xs font-bold bg-amber-500/20 text-amber-400 border border-amber-500/30">
+                            ⏱ PENDING REVIEW
+                        </span>
+                    {% else %}
+                        <span class="px-3 py-1 rounded-lg text-xs font-bold bg-red-500/20 text-red-400 border border-red-500/30">
+                            ✕ UNPAID
+                        </span>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        {% if member.notes %}
+        <div class="mt-6 pt-4 border-t border-slate-800/80 text-xs text-slate-400">
+            <span class="font-semibold text-slate-300 uppercase tracking-wider">Coach Notes:</span>
+            <p class="mt-1 italic text-slate-300">{{ member.notes }}</p>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Monthly Subscriptions History Table -->
+    <div class="bg-slate-900 border border-slate-800 rounded-2xl shadow-xl overflow-hidden">
+        <div class="p-5 border-b border-slate-800 bg-slate-850 flex items-center justify-between">
+            <h2 class="text-lg font-bold font-boxing tracking-wide uppercase text-white">
+                Monthly Subscription Records
+            </h2>
+            <span class="text-xs text-slate-400">History preserved per calendar month</span>
+        </div>
+
+        <div class="overflow-x-auto">
+            <table class="w-full text-left text-sm">
+                <thead>
+                    <tr class="text-xs uppercase text-slate-400 bg-slate-950/60 border-b border-slate-800">
+                        <th class="py-3.5 px-6 font-semibold">Subscription Month</th>
+                        <th class="py-3.5 px-6 font-semibold">Amount Due</th>
+                        <th class="py-3.5 px-6 font-semibold">Payment Status</th>
+                        <th class="py-3.5 px-6 font-semibold">Verified Date / By</th>
+                        <th class="py-3.5 px-6 font-semibold text-right">Admin Action</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-800/60">
+                    {% for sub in subscriptions %}
+                    <tr class="hover:bg-slate-800/40 transition-colors">
+                        <td class="py-4 px-6 font-bold text-white">{{ sub.month_display }}</td>
+                        <td class="py-4 px-6 text-slate-300">{{ sub.amount_due }} {{ club_settings.currency_symbol }}</td>
+                        <td class="py-4 px-6">
+                            {% if sub.status == 'PAID' %}
+                                <span class="px-2.5 py-0.5 rounded text-xs font-bold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">Paid</span>
+                            {% elif sub.status == 'PENDING' %}
+                                <span class="px-2.5 py-0.5 rounded text-xs font-bold bg-amber-500/20 text-amber-400 border border-amber-500/30">Pending</span>
+                            {% else %}
+                                <span class="px-2.5 py-0.5 rounded text-xs font-bold bg-red-500/20 text-red-400 border border-red-500/30">Unpaid</span>
+                            {% endif %}
+                        </td>
+                        <td class="py-4 px-6 text-xs text-slate-400">
+                            {% if sub.paid_at %}
+                                {{ sub.paid_at|date:"M d, Y" }}
+                                {% if sub.verified_by %}
+                                    <span class="text-slate-500">by {{ sub.verified_by.username }}</span>
+                                {% endif %}
+                            {% else %}
+                                —
+                            {% endif %}
+                        </td>
+                        <td class="py-4 px-6 text-right">
+                            <a href="{% url 'coach_manual_status_change' sub.id %}" class="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold transition-colors">
+                                Override Status
+                            </a>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="5" class="py-8 text-center text-slate-500">No monthly records found.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Payment Proof Submissions History -->
+    <div class="bg-slate-900 border border-slate-800 rounded-2xl shadow-xl overflow-hidden">
+        <div class="p-5 border-b border-slate-800 bg-slate-850 flex items-center justify-between">
+            <h2 class="text-lg font-bold font-boxing tracking-wide uppercase text-white">
+                Payment Proof Submissions
+            </h2>
+            <span class="text-xs text-slate-400">Uploaded bank / Telebirr screenshots</span>
+        </div>
+
+        <div class="divide-y divide-slate-800/80">
+            {% for sub in subscriptions %}
+                {% for submiss in sub.submissions.all %}
+                <div class="p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 hover:bg-slate-800/40 transition-colors">
+                    <div class="flex items-center gap-4">
+                        <div class="w-14 h-14 rounded-xl bg-slate-950 border border-slate-700 overflow-hidden flex-shrink-0 flex items-center justify-center">
+                            {% if submiss.screenshot %}
+                                <a href="{{ submiss.screenshot.url }}" target="_blank">
+                                    <img src="{{ submiss.screenshot.url }}" alt="Proof" class="w-full h-full object-cover">
+                                </a>
+                            {% endif %}
+                        </div>
+                        <div>
+                            <div class="flex items-center gap-2">
+                                <span class="font-bold text-white text-sm">Submission for {{ sub.month_display }}</span>
+                                {% if submiss.status == 'APPROVED' %}
+                                    <span class="px-2 py-0.5 rounded text-[11px] font-bold bg-emerald-500/20 text-emerald-400">Approved</span>
+                                {% elif submiss.status == 'PENDING' %}
+                                    <span class="px-2 py-0.5 rounded text-[11px] font-bold bg-amber-500/20 text-amber-400">Pending Review</span>
+                                {% else %}
+                                    <span class="px-2 py-0.5 rounded text-[11px] font-bold bg-red-500/20 text-red-400">Rejected</span>
+                                {% endif %}
+                            </div>
+                            <div class="text-xs text-slate-400 mt-1 flex flex-wrap items-center gap-2">
+                                <span>Uploaded: {{ submiss.submitted_at|date:"M d, Y H:i" }}</span>
+                                {% if submiss.transaction_reference %}
+                                    <span>•</span>
+                                    <span class="font-mono bg-slate-950 px-1.5 py-0.5 rounded text-slate-300">{{ submiss.transaction_reference }}</span>
+                                {% endif %}
+                                {% if submiss.rejection_reason %}
+                                    <span class="text-red-400 font-semibold">• Reason: {{ submiss.rejection_reason }}</span>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+
+                    {% if submiss.status == 'PENDING' %}
+                        <div>
+                            <a href="{% url 'coach_review_submission' submiss.id %}" class="px-4 py-2 rounded-xl bg-red-600 hover:bg-red-700 text-white font-bold text-xs uppercase tracking-wide transition-colors">
+                                Inspect Proof
+                            </a>
+                        </div>
+                    {% endif %}
+                </div>
+                {% endfor %}
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- Boxer Specific Audit Trail -->
+    {% if audits %}
+    <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl">
+        <h2 class="text-base font-bold font-boxing tracking-wide uppercase text-white mb-4 pb-2 border-b border-slate-800">
+            Administrative Audit History for this Boxer
+        </h2>
+        <div class="divide-y divide-slate-800/60 text-xs">
+            {% for a in audits %}
+            <div class="py-2.5 flex items-center justify-between text-slate-400">
+                <div>
+                    <strong class="text-white">[{{ a.get_action_type_display }}]</strong>
+                    <span class="ml-2">{{ a.details }}</span>
+                </div>
+                <span class="text-slate-500 flex-shrink-0 ml-4">{{ a.timestamp|date:"M d, Y H:i" }}</span>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+
+</div>
+{% endblock %}
