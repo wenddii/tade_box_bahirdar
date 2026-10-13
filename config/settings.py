@@ -15,8 +15,7 @@ SECRET_KEY = os.getenv('SECRET_KEY', 'django-insecure-tadebox-boxing-club-subscr
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = os.getenv('DEBUG', 'True').lower() in ('true', '1', 't', 'yes')
-
-ALLOWED_HOSTS = ['tade-box-bahirdar.vercel.app']
+ALLOWED_HOSTS = ['*', '.vercel.app', 'tade-box-bahirdar.vercel.app', 'localhost', '127.0.0.1']
 
 # Application definition
 INSTALLED_APPS = [
@@ -155,7 +154,12 @@ CSRF_TRUSTED_ORIGINS_ENV = os.getenv('CSRF_TRUSTED_ORIGINS', '')
 if CSRF_TRUSTED_ORIGINS_ENV:
     CSRF_TRUSTED_ORIGINS = [origin.strip() for origin in CSRF_TRUSTED_ORIGINS_ENV.split(',') if origin.strip()]
 else:
-    CSRF_TRUSTED_ORIGINS = ['http://localhost:8000', 'http://127.0.0.1:8000', 'https://*.vercel.app']
+    CSRF_TRUSTED_ORIGINS = [
+        'http://localhost:8000',
+        'http://127.0.0.1:8000',
+        'https://tade-box-bahirdar.vercel.app',
+        'https://*.vercel.app',
+    ]
 
 # Security settings in production
 if not DEBUG:
