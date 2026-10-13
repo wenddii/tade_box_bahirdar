@@ -1,251 +1,286 @@
 {% extends 'base.html' %}
 
-{% block title %}My Dashboard - {{ club_settings.club_name }}{% endblock %}
+{% block title %}My Monthly Subscription - {{ club_settings.club_name }}{% endblock %}
 
 {% block content %}
 <div class="space-y-8">
-    <!-- Boxer Header & Current Month Status Banner -->
-    <div class="bg-gradient-to-r from-slate-900 via-slate-900 to-slate-950 border border-slate-800 rounded-3xl p-6 sm:p-8 shadow-2xl relative overflow-hidden">
-        <div class="absolute -right-8 -top-8 w-60 h-60 bg-red-600/10 rounded-full blur-3xl pointer-events-none"></div>
 
-        <div class="flex flex-col md:flex-row md:items-center justify-between gap-6">
+    <!-- 1. Member Status Header -->
+    <div class="bg-slate-900 border border-slate-800 rounded-3xl p-6 sm:p-8 shadow-xl relative overflow-hidden">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div>
-                <div class="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-slate-400 mb-2">
-                    <span>Active Club Boxer</span>
-                    <span>•</span>
-                    <span>Joined {{ member.join_date|date:"M Y" }}</span>
-                </div>
-                <h1 class="text-3xl sm:text-4xl font-bold font-boxing tracking-wide uppercase text-white">
-                    Welcome back, {{ member.display_name }}!
+                <span class="text-xs uppercase tracking-wider font-semibold text-slate-400 block mb-1">
+                    Club Boxer Dashboard
+                </span>
+                <h1 class="text-3xl font-bold font-boxing tracking-wide text-white uppercase">
+                    {{ member.display_name }}
                 </h1>
-                <p class="text-sm text-slate-400 mt-1">
-                    Subscription management for <strong class="text-slate-200">{{ subscription.month_display }}</strong>
+                <p class="text-xs text-slate-400 mt-1">
+                    Monthly billing cycle: <strong class="text-white">{{ current_month|date:"F Y" }}</strong>
                 </p>
             </div>
 
-            <!-- Current Month Status Indicator -->
-            <div class="flex-shrink-0">
+            <!-- Prominent Status Badge -->
+            <div>
                 {% if subscription.status == 'PAID' %}
-                    <div class="bg-emerald-950/80 border border-emerald-600/60 rounded-2xl p-4 shadow-lg flex items-center gap-4">
-                        <div class="w-12 h-12 rounded-xl bg-emerald-500/20 border border-emerald-500/40 flex items-center justify-center text-emerald-400 flex-shrink-0">
-                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>
+                    <div class="inline-flex items-center gap-3 px-5 py-3 rounded-2xl bg-emerald-950 border border-emerald-600/70 shadow-lg text-emerald-300">
+                        <div class="w-8 h-8 rounded-xl bg-emerald-500/20 flex items-center justify-center text-emerald-400">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>
                         </div>
                         <div>
-                            <div class="text-xs uppercase font-bold tracking-wider text-emerald-400">Status for {{ subscription.month_display }}</div>
-                            <div class="text-xl font-bold text-white">PAID & VERIFIED</div>
-                            <div class="text-[11px] text-emerald-300/80">Verified on {{ subscription.paid_at|date:"M d, Y" }}</div>
+                            <span class="block text-[10px] uppercase tracking-wider font-bold text-emerald-400">Payment Status</span>
+                            <span class="text-lg font-bold text-white">PAID & VERIFIED</span>
                         </div>
                     </div>
                 {% elif subscription.status == 'PENDING' %}
-                    <div class="bg-amber-950/80 border border-amber-600/60 rounded-2xl p-4 shadow-lg flex items-center gap-4">
-                        <div class="w-12 h-12 rounded-xl bg-amber-500/20 border border-amber-500/40 flex items-center justify-center text-amber-400 flex-shrink-0">
-                            <svg class="w-6 h-6 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                    <div class="inline-flex items-center gap-3 px-5 py-3 rounded-2xl bg-amber-950 border border-amber-600/70 shadow-lg text-amber-300">
+                        <div class="w-8 h-8 rounded-xl bg-amber-500/20 flex items-center justify-center text-amber-400">
+                            <svg class="w-5 h-5 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
                         </div>
                         <div>
-                            <div class="text-xs uppercase font-bold tracking-wider text-amber-400">Status for {{ subscription.month_display }}</div>
-                            <div class="text-xl font-bold text-white">PENDING REVIEW</div>
-                            <div class="text-[11px] text-amber-300/80">Proof submitted, awaiting Coach Tade</div>
+                            <span class="block text-[10px] uppercase tracking-wider font-bold text-amber-400">Payment Status</span>
+                            <span class="text-lg font-bold text-white">PENDING APPROVAL</span>
                         </div>
                     </div>
                 {% else %}
-                    <div class="bg-red-950/80 border border-red-600/60 rounded-2xl p-4 shadow-lg flex items-center gap-4">
-                        <div class="w-12 h-12 rounded-xl bg-red-500/20 border border-red-500/40 flex items-center justify-center text-red-400 flex-shrink-0">
-                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+                    <div class="inline-flex items-center gap-3 px-5 py-3 rounded-2xl bg-red-950 border border-red-600/70 shadow-lg text-red-300">
+                        <div class="w-8 h-8 rounded-xl bg-red-500/20 flex items-center justify-center text-red-400">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
                         </div>
                         <div>
-                            <div class="text-xs uppercase font-bold tracking-wider text-red-400">Status for {{ subscription.month_display }}</div>
-                            <div class="text-xl font-bold text-white">UNPAID ({{ subscription.amount_due }} {{ club_settings.currency_symbol }})</div>
-                            <div class="text-[11px] text-red-300/80">Due by {{ deadline_date|date:"F d, Y" }}</div>
+                            <span class="block text-[10px] uppercase tracking-wider font-bold text-red-400">Payment Status</span>
+                            <span class="text-lg font-bold text-white">UNPAID ({{ subscription.amount_due }} {{ club_settings.currency_symbol }})</span>
                         </div>
                     </div>
                 {% endif %}
             </div>
         </div>
+
+        <!-- Rejection Feedback Alert (if previous submission was rejected) -->
+        {% if latest_submission and latest_submission.status == 'REJECTED' and subscription.status != 'PAID' %}
+        <div class="mt-6 p-4 rounded-2xl bg-red-950/80 border border-red-700 text-sm text-red-200">
+            <div class="flex items-center gap-2 font-bold text-red-300 mb-1">
+                <svg class="w-4 h-4 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                Previous Screenshot Rejected by Coach:
+            </div>
+            <div class="bg-black/40 p-2.5 rounded-xl border border-red-900/60 font-medium italic mt-1">
+                &ldquo;{{ latest_submission.rejection_reason }}&rdquo;
+            </div>
+            <div class="text-xs text-red-300 mt-2">
+                Please review your transfer and upload a clear screenshot showing the transaction ID, date, and 1,500 ETB amount below.
+            </div>
+        </div>
+        {% endif %}
     </div>
 
-    <!-- Rejection Alert (If Latest Submission was Rejected) -->
-    {% if latest_submission and latest_submission.status == 'REJECTED' and subscription.status != 'PAID' %}
-    <div class="bg-red-950/90 border-2 border-red-600 rounded-2xl p-6 shadow-2xl relative">
-        <div class="flex items-start gap-4">
-            <div class="w-10 h-10 rounded-xl bg-red-600 text-white flex items-center justify-center flex-shrink-0 mt-0.5">
-                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
-            </div>
-            <div class="flex-grow">
-                <h3 class="text-lg font-bold text-white">Previous Payment Proof Rejected</h3>
-                <p class="text-sm text-red-200 mt-1">
-                    Coach Tade reviewed your previous submission and provided the following feedback:
-                </p>
-                <div class="bg-black/50 border border-red-800/80 rounded-xl p-3.5 mt-3 text-sm text-red-100 font-medium">
-                    &ldquo;{{ latest_submission.rejection_reason }}&rdquo;
-                </div>
-                <div class="mt-4">
-                    <a href="{% url 'member_payment_submit' %}" class="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-red-600 hover:bg-red-700 text-white font-semibold text-sm transition-colors shadow-lg shadow-red-900/50">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/></svg>
-                        Upload Corrected Proof
-                    </a>
-                </div>
-            </div>
-        </div>
-    </div>
-    {% endif %}
+    <!-- 2. Payment & Screenshot Upload Section -->
+    <div class="grid grid-cols-1 md:grid-cols-12 gap-6">
 
-    <!-- Main Grid: Payment Action & Instructions -->
-    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-
-        <!-- Column 1 & 2: Payment Action Card -->
-        <div class="lg:col-span-2 bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl flex flex-col justify-between">
+        <!-- Payment Instructions Card (5 cols) -->
+        <div class="md:col-span-5 bg-slate-900 border border-slate-800 rounded-3xl p-6 shadow-xl flex flex-col justify-between">
             <div>
-                <div class="flex items-center justify-between pb-4 border-b border-slate-800">
-                    <h2 class="text-xl font-bold font-boxing tracking-wide uppercase text-white flex items-center gap-2">
-                        <svg class="w-5 h-5 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
-                        Monthly Subscription Details
-                    </h2>
-                    <span class="text-xs px-2.5 py-1 rounded bg-slate-800 text-slate-300 font-semibold">
-                        Cycle: {{ subscription.month_display }}
-                    </span>
-                </div>
-
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 my-6">
-                    <div class="bg-slate-950/70 border border-slate-800/80 rounded-xl p-4">
-                        <span class="text-xs text-slate-400 block uppercase tracking-wider font-semibold">Monthly Amount</span>
-                        <div class="text-2xl font-bold font-boxing tracking-wide text-white mt-1">
-                            {{ subscription.amount_due }} {{ club_settings.currency_symbol }}
-                        </div>
-                        <span class="text-xs text-slate-500">Standard monthly training rate</span>
-                    </div>
-
-                    <div class="bg-slate-950/70 border border-slate-800/80 rounded-xl p-4">
-                        <span class="text-xs text-slate-400 block uppercase tracking-wider font-semibold">Payment Deadline</span>
-                        <div class="text-2xl font-bold font-boxing tracking-wide text-amber-400 mt-1">
-                            {{ deadline_date|date:"F d, Y" }}
-                        </div>
-                        <span class="text-xs text-slate-500">Every {{ club_settings.payment_deadline_day }}th of the month</span>
-                    </div>
-                </div>
-
-                <!-- Latest Submission Status Box if exists -->
-                {% if latest_submission %}
-                <div class="bg-slate-950/60 border border-slate-800/80 rounded-xl p-4 mb-6">
-                    <span class="text-xs font-semibold text-slate-400 uppercase tracking-wider block mb-2">Most Recent Submission</span>
-                    <div class="flex items-center justify-between text-sm">
-                        <div class="flex items-center gap-2">
-                            <span class="text-slate-300">Submitted on: {{ latest_submission.submitted_at|date:"M d, Y H:i" }}</span>
-                            {% if latest_submission.transaction_reference %}
-                                <span class="text-xs bg-slate-800 px-2 py-0.5 rounded text-slate-400 font-mono">{{ latest_submission.transaction_reference }}</span>
-                            {% endif %}
-                        </div>
-                        <div>
-                            {% if latest_submission.status == 'APPROVED' %}
-                                <span class="px-2.5 py-0.5 rounded text-xs font-bold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">Approved</span>
-                            {% elif latest_submission.status == 'PENDING' %}
-                                <span class="px-2.5 py-0.5 rounded text-xs font-bold bg-amber-500/20 text-amber-400 border border-amber-500/30">Pending Verification</span>
-                            {% else %}
-                                <span class="px-2.5 py-0.5 rounded text-xs font-bold bg-red-500/20 text-red-400 border border-red-500/30">Rejected</span>
-                            {% endif %}
-                        </div>
-                    </div>
-                </div>
-                {% endif %}
-            </div>
-
-            <!-- Action Button -->
-            <div class="pt-4 border-t border-slate-800">
-                {% if subscription.status == 'PAID' %}
-                    <div class="flex items-center justify-between">
-                        <span class="text-sm text-emerald-400 flex items-center gap-1.5 font-medium">
-                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
-                            All clear for {{ subscription.month_display }}. Keep training hard!
-                        </span>
-                        <a href="{% url 'club_status_page' %}" class="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold transition-colors">
-                            View Club Roster
-                        </a>
-                    </div>
-                {% elif subscription.status == 'PENDING' %}
-                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                        <span class="text-sm text-amber-300 flex items-center gap-1.5 font-medium">
-                            <svg class="w-5 h-5 animate-pulse text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-                            Your payment proof has been received and is waiting for Coach Tade to review.
-                        </span>
-                        <a href="{% url 'member_payment_submit' %}" class="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold text-center transition-colors">
-                            Submit Another Proof
-                        </a>
-                    </div>
-                {% else %}
-                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                        <span class="text-xs text-slate-400">
-                            Transfer 1,500 ETB via CBE or Telebirr and submit your screenshot proof below.
-                        </span>
-                        <a href="{% url 'member_payment_submit' %}" class="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-xl bg-gradient-to-r from-red-600 to-red-700 hover:from-red-500 hover:to-red-600 text-white font-bold text-sm shadow-xl shadow-red-900/40 hover:shadow-red-900/60 transition-all uppercase tracking-wide">
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/></svg>
-                            Submit Proof of Payment
-                        </a>
-                    </div>
-                {% endif %}
-            </div>
-        </div>
-
-        <!-- Column 3: Payment Instructions Card -->
-        <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl flex flex-col justify-between">
-            <div>
-                <h2 class="text-xl font-bold font-boxing tracking-wide uppercase text-white flex items-center gap-2 pb-4 border-b border-slate-800">
-                    <svg class="w-5 h-5 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
-                    Payment Transfer Instructions
+                <h2 class="text-base font-bold font-boxing tracking-wide uppercase text-white flex items-center gap-2 pb-3 border-b border-slate-800">
+                    <svg class="w-4 h-4 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
+                    How to Pay Your {{ current_month|date:"F" }} Fee
                 </h2>
-                <div class="mt-4 p-4 bg-slate-950/80 border border-slate-800 rounded-xl text-xs text-slate-300 font-mono whitespace-pre-line leading-relaxed">
+
+                <div class="mt-4 space-y-3 text-xs">
+                    <div class="bg-slate-950 p-3 rounded-xl border border-slate-800">
+                        <span class="text-slate-400 block">Monthly Fee:</span>
+                        <strong class="text-base font-bold text-white">{{ subscription.amount_due }} {{ club_settings.currency_symbol }}</strong>
+                        <span class="text-[11px] text-amber-400 block mt-0.5">Deadline: {{ deadline_date|date:"F d, Y" }}</span>
+                    </div>
+
+                    <div class="bg-slate-950 p-3 rounded-xl border border-slate-800 font-mono text-[11px] leading-relaxed text-slate-300 whitespace-pre-line">
 {{ club_settings.payment_instructions }}
+                    </div>
                 </div>
             </div>
 
-            <div class="mt-6 pt-4 border-t border-slate-800/80 text-xs text-slate-400">
-                <span>Questions? Contact Coach Tade at <strong class="text-white">{{ club_settings.contact_phone }}</strong></span>
+            <div class="mt-4 pt-3 border-t border-slate-800 text-[11px] text-slate-500">
+                After transfer, take a screenshot of your confirmation receipt and upload it next.
             </div>
         </div>
 
+        <!-- Inline Screenshot Upload Form Card (7 cols) -->
+        <div class="md:col-span-7 bg-slate-900 border border-slate-800 rounded-3xl p-6 shadow-xl">
+            <h2 class="text-base font-bold font-boxing tracking-wide uppercase text-white flex items-center gap-2 pb-3 border-b border-slate-800 mb-4">
+                <svg class="w-4 h-4 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/></svg>
+                Upload Payment Screenshot
+            </h2>
+
+            {% if subscription.status == 'PAID' %}
+                <div class="p-4 rounded-2xl bg-emerald-950/40 border border-emerald-800/60 text-xs text-emerald-300 mb-4 flex items-center gap-3">
+                    <svg class="w-5 h-5 text-emerald-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+                    <span>Your subscription for <strong>{{ current_month|date:"F Y" }}</strong> is already verified and marked as Paid! You can upload an additional proof below if required.</span>
+                </div>
+            {% elif subscription.status == 'PENDING' %}
+                <div class="p-4 rounded-2xl bg-amber-950/40 border border-amber-800/60 text-xs text-amber-300 mb-4 flex items-center gap-3">
+                    <svg class="w-5 h-5 text-amber-400 animate-pulse flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                    <span>Your screenshot was submitted and is currently in Coach Tade's review queue. You can upload an updated screenshot if needed.</span>
+                </div>
+            {% endif %}
+
+            <form method="post" enctype="multipart/form-data" class="space-y-4">
+                {% csrf_token %}
+
+                <div>
+                    <label class="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1.5">
+                        Select Screenshot File <span class="text-red-500">*</span>
+                    </label>
+                    <input type="file" name="screenshot" accept="image/jpeg,image/png,image/webp,image/jpg" required id="member-screenshot-file"
+                        class="block w-full text-xs text-slate-400 file:mr-3 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-red-600 file:text-white hover:file:bg-red-700 bg-slate-950 border border-slate-800 rounded-xl p-2 cursor-pointer focus:outline-none focus:ring-2 focus:ring-red-500">
+                    <span class="text-[11px] text-slate-500 mt-1 block">Supports JPEG, PNG, WebP up to 5 MB</span>
+                </div>
+
+                <!-- Live Preview Box -->
+                <div id="preview-box" class="hidden p-3 bg-slate-950 border border-slate-800 rounded-xl">
+                    <span class="text-[11px] uppercase tracking-wider font-semibold text-slate-400 block mb-2">Preview Selected Image:</span>
+                    <div class="flex items-center justify-center max-h-48 overflow-hidden rounded-lg bg-black/50 p-2">
+                        <img id="image-preview" src="#" alt="Receipt Preview" class="max-h-44 object-contain rounded">
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1.5">
+                        Transaction Reference / Code <span class="text-slate-500 text-[11px] font-normal">(Optional)</span>
+                    </label>
+                    <input type="text" name="transaction_reference" placeholder="e.g. CBE-TX-984729 or Telebirr Ref"
+                        class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-red-500">
+                </div>
+
+                <div class="pt-2">
+                    <button type="submit" class="w-full py-3 px-4 bg-gradient-to-r from-red-600 to-red-700 hover:from-red-500 hover:to-red-600 text-white font-bold text-xs rounded-xl shadow-lg shadow-red-900/40 uppercase tracking-wide transition-all">
+                        Submit Payment Screenshot
+                    </button>
+                </div>
+            </form>
+        </div>
+
     </div>
 
-    <!-- Past Subscriptions History Snapshot -->
-    {% if past_subscriptions %}
-    <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl">
-        <div class="flex items-center justify-between pb-4 border-b border-slate-800">
-            <h2 class="text-lg font-bold font-boxing tracking-wide uppercase text-white">
-                Recent Payment History
-            </h2>
-            <a href="{% url 'member_history' %}" class="text-xs text-red-400 hover:text-red-300 font-semibold transition-colors">
-                View Full History &rarr;
-            </a>
+    <!-- 3. Current Month Club-Wide Status Lists (Paid and Unpaid Members) -->
+    <div class="bg-slate-900 border border-slate-800 rounded-3xl p-6 sm:p-8 shadow-xl">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between pb-6 border-b border-slate-800 gap-4">
+            <div>
+                <span class="text-xs uppercase tracking-wider font-semibold text-red-500 block">
+                    {{ current_month|date:"F Y" }} Club Roster
+                </span>
+                <h2 class="text-2xl font-bold font-boxing tracking-wide text-white uppercase">
+                    Paid vs Unpaid Members
+                </h2>
+                <p class="text-xs text-slate-400 mt-0.5">
+                    Live accountability board for all 30 active boxers. Updated automatically every month.
+                </p>
+            </div>
+
+            <!-- Tally Counts -->
+            <div class="flex items-center gap-3">
+                <div class="px-4 py-2 rounded-xl bg-emerald-950/60 border border-emerald-700/60 text-center">
+                    <span class="block text-xl font-bold font-boxing text-emerald-400 leading-none">{{ paid_count }}</span>
+                    <span class="text-[10px] uppercase font-bold text-emerald-300 tracking-wider">Paid</span>
+                </div>
+                <div class="px-4 py-2 rounded-xl bg-red-950/60 border border-red-700/60 text-center">
+                    <span class="block text-xl font-bold font-boxing text-red-400 leading-none">{{ unpaid_count }}</span>
+                    <span class="text-[10px] uppercase font-bold text-red-300 tracking-wider">Unpaid</span>
+                </div>
+                <div class="px-4 py-2 rounded-xl bg-slate-950 border border-slate-800 text-center">
+                    <span class="block text-xl font-bold font-boxing text-white leading-none">{{ total_active }}</span>
+                    <span class="text-[10px] uppercase font-bold text-slate-400 tracking-wider">Total</span>
+                </div>
+            </div>
         </div>
-        <div class="mt-4 overflow-x-auto">
-            <table class="w-full text-left text-sm">
-                <thead>
-                    <tr class="text-xs uppercase text-slate-400 border-b border-slate-800">
-                        <th class="pb-3 font-semibold">Subscription Month</th>
-                        <th class="pb-3 font-semibold">Amount</th>
-                        <th class="pb-3 font-semibold">Status</th>
-                        <th class="pb-3 font-semibold">Verified Date</th>
-                    </tr>
-                </thead>
-                <tbody class="divide-y divide-slate-800/60">
-                    {% for sub in past_subscriptions %}
-                    <tr class="hover:bg-slate-800/40">
-                        <td class="py-3.5 font-medium text-white">{{ sub.month_display }}</td>
-                        <td class="py-3.5 text-slate-300">{{ sub.amount_due }} {{ club_settings.currency_symbol }}</td>
-                        <td class="py-3.5">
-                            {% if sub.status == 'PAID' %}
-                                <span class="px-2.5 py-0.5 rounded text-xs font-bold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">Paid</span>
-                            {% elif sub.status == 'PENDING' %}
-                                <span class="px-2.5 py-0.5 rounded text-xs font-bold bg-amber-500/20 text-amber-400 border border-amber-500/30">Pending</span>
+
+        <!-- Two Columns: Paid Members & Unpaid Members -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
+
+            <!-- Left Column: Paid Members -->
+            <div class="bg-slate-950/60 border border-slate-800/80 rounded-2xl p-4">
+                <div class="flex items-center justify-between pb-3 border-b border-slate-800">
+                    <span class="text-xs font-bold uppercase tracking-wider text-emerald-400 flex items-center gap-1.5">
+                        <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
+                        Paid Boxers ({{ paid_count }})
+                    </span>
+                    <span class="text-[11px] text-slate-500">Verified</span>
+                </div>
+                <div class="divide-y divide-slate-800/60 mt-2 max-h-96 overflow-y-auto">
+                    {% if paid_members %}
+                        {% for item in paid_members %}
+                        <div class="py-2.5 px-2 flex items-center justify-between hover:bg-slate-900/60 rounded-lg transition-colors">
+                            <span class="text-xs font-semibold text-white">{{ item.profile.display_name }}</span>
+                            <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
+                                Paid
+                            </span>
+                        </div>
+                        {% endfor %}
+                    {% else %}
+                        <div class="py-8 text-center text-slate-500 text-xs">
+                            No members recorded as paid yet this month.
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Right Column: Unpaid Members (with Pending highlighted) -->
+            <div class="bg-slate-950/60 border border-slate-800/80 rounded-2xl p-4">
+                <div class="flex items-center justify-between pb-3 border-b border-slate-800">
+                    <span class="text-xs font-bold uppercase tracking-wider text-red-400 flex items-center gap-1.5">
+                        <span class="w-2 h-2 rounded-full bg-red-500"></span>
+                        Unpaid Boxers ({{ unpaid_count }})
+                    </span>
+                    <span class="text-[11px] text-slate-500">Due by {{ deadline_date|date:"M d" }}</span>
+                </div>
+                <div class="divide-y divide-slate-800/60 mt-2 max-h-96 overflow-y-auto">
+                    {% if unpaid_members %}
+                        {% for item in unpaid_members %}
+                        <div class="py-2.5 px-2 flex items-center justify-between hover:bg-slate-900/60 rounded-lg transition-colors">
+                            <span class="text-xs font-semibold text-slate-300">{{ item.profile.display_name }}</span>
+                            {% if item.status == 'PENDING' %}
+                                <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-500/20 text-amber-400 border border-amber-500/30">
+                                    In Review
+                                </span>
                             {% else %}
-                                <span class="px-2.5 py-0.5 rounded text-xs font-bold bg-red-500/20 text-red-400 border border-red-500/30">Unpaid</span>
+                                <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-red-500/20 text-red-400 border border-red-500/30">
+                                    Unpaid
+                                </span>
                             {% endif %}
-                        </td>
-                        <td class="py-3.5 text-xs text-slate-400">{{ sub.paid_at|date:"M d, Y"|default:"—" }}</td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
+                        </div>
+                        {% endfor %}
+                    {% else %}
+                        <div class="py-8 text-center text-emerald-400 text-xs font-semibold">
+                            All members have paid for this month!
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+
         </div>
     </div>
-    {% endif %}
 
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    const fileInput = document.getElementById('member-screenshot-file');
+    const previewBox = document.getElementById('preview-box');
+    const previewImg = document.getElementById('image-preview');
+
+    if (fileInput) {
+        fileInput.addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(event) {
+                    previewImg.src = event.target.result;
+                    previewBox.classList.remove('hidden');
+                };
+                reader.readAsDataURL(file);
+            } else {
+                previewBox.classList.add('hidden');
+                previewImg.src = '#';
+            }
+        });
+    }
+</script>
 {% endblock %}

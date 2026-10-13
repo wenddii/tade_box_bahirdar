@@ -2,7 +2,7 @@ from django.urls import path
 from . import views
 
 urlpatterns = [
-    # Auth & Routing
+    # Auth & Smart Routing
     path('', views.dashboard_redirect, name='index'),
     path('login/', views.login_view, name='login'),
     path('logout/', views.logout_view, name='logout'),
@@ -11,14 +11,21 @@ urlpatterns = [
     # Public / Club-wide status page
     path('club-status/', views.club_status_page, name='club_status_page'),
 
-    # Member Portal
-    path('member/dashboard/', views.member_dashboard, name='member_dashboard'),
+    # 1. Single Member Dashboard (status, upload screenshot, and current month paid/unpaid lists)
+    path('member/', views.member_dashboard, name='member_dashboard'),
+    path('member/dashboard/', views.member_dashboard, name='member_dashboard_alt'),
     path('member/pay/', views.member_payment_submit, name='member_payment_submit'),
     path('member/history/', views.member_history, name='member_history'),
     path('member/profile/', views.member_profile_view, name='member_profile'),
 
-    # Coach / Admin Portal
-    path('coach/dashboard/', views.coach_dashboard, name='coach_dashboard'),
+    # 2. Single Coach Dashboard (all members, screenshots, inline approve & reject, member addition)
+    path('coach/', views.coach_dashboard, name='coach_dashboard'),
+    path('coach/dashboard/', views.coach_dashboard, name='coach_dashboard_alt'),
+    path('coach/approve/<int:submission_id>/', views.coach_approve_payment, name='coach_approve_payment'),
+    path('coach/reject/<int:submission_id>/', views.coach_reject_payment, name='coach_reject_payment'),
+    path('coach/quick-add/', views.coach_quick_add_member, name='coach_quick_add_member'),
+
+    # Backward compatibility routes
     path('coach/submissions/', views.coach_pending_submissions, name='coach_pending_submissions'),
     path('coach/submissions/<int:submission_id>/review/', views.coach_review_submission, name='coach_review_submission'),
     path('coach/members/', views.coach_member_list, name='coach_member_list'),

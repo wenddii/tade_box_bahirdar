@@ -451,3 +451,78 @@ class BoxingClubSubscriptionTestCase(TestCase):
         self.assertEqual(response_oct.status_code, 200)
         self.assertEqual(response_oct.context['selected_month'], oct_month)
         self.assertEqual(response_oct.context['unpaid_count'], 1)
+
+    # --------------------------------------------------------------------------
+    # 15. Member direct upload on single dashboard sets status to PENDING
+    # --------------------------------------------------------------------------
+    def test_member_direct_dashboard_upload(self):
+        self.client.login(username='boxer_a', password='password123')
+        test_file = create_test_image_file()
+
+        response = self.client.post(
+            reverse('member_dashboard'),
+            {'screenshot': test_file, 'transaction_reference': 'TX-DIRECT-123'}
+        )
+        self.assertEqual(response.status_code, 302)
+
+        sub = Subscription.objects.get(member=self.member_a, subscription_month=get_current_subscription_month())
+        self.assertEqual(sub.status, Subscription.Status.PENDING)
+        self.assertTrue(sub.submissions.filter(transaction_reference='TX-DIRECT-123').exists())
+
+    # --------------------------------------------------------------------------
+    # 16. Coach inline approve and reject actions
+    # --------------------------------------------------------------------------
+    def test_coach_inline_approve_and_reject(self):
+        current_month = get_current_subscription_month()
+        sub = ensure_subscription_for_member(self.member_a, current_month)
+        submission = PaymentSubmission.objects.create(
+            subscription=sub,
+            member=self.member_a,
+            screenshot=create_test_image_file(),
+            status=PaymentSubmission.Status.PENDING
+        )
+        sub.status = Subscription.Status.PENDING
+        sub.save()
+
+        self.client.login(username='coach_tade', password='password123')
+
+        # Approve inline
+        app_res = self.client.post(reverse('coach_approve_payment', args=[submission.id]))
+        self.assertEqual(app_res.status_code, 302)
+        sub.refresh_from_db()
+        self.assertEqual(sub.status, Subscription.Status.PAID)
+
+        # Reject inline
+        rej_res = self.client.post(
+            reverse('coach_reject_payment', args=[submission.id]),
+            {'rejection_reason': 'Invalid receipt amount'}
+        )
+        self.assertEqual(rej_res.status_code, 302)
+        sub.refresh_from_db()
+        submission.refresh_from_db()
+        self.assertEqual(sub.status, Subscription.Status.UNPAID)
+        self.assertEqual(submission.status, PaymentSubmission.Status.REJECTED)
+        self.assertEqual(submission.rejection_reason, 'Invalid receipt amount')
+
+    # --------------------------------------------------------------------------
+    # 17. Coach quick add member
+    # --------------------------------------------------------------------------
+    def test_coach_quick_add_member(self):
+        self.client.login(username='coach_tade', password='password123')
+        res = self.client.post(
+            reverse('coach_quick_add_member'),
+            {
+                'display_name': 'New Boxer Kidane',
+                'username': 'kidane_k',
+                'phone_number': '0911555555',
+                'password': 'boxer2026'
+            }
+        )
+        self.assertEqual(res.status_code, 302)
+        new_profile = MemberProfile.objects.get(user__username='kidane_k')
+        self.assertEqual(new_profile.display_name, 'New Boxer Kidane')
+        self.assertTrue(new_profile.is_active_member)
+        # Verify current month subscription was automatically created as UNPAID
+        current_month = get_current_subscription_month()
+        sub = Subscription.objects.get(member=new_profile, subscription_month=current_month)
+        self.assertEqual(sub.status, Subscription.Status.UNPAID)

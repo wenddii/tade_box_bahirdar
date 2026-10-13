@@ -3,192 +3,356 @@
 {% block title %}Coach Dashboard - {{ club_settings.club_name }}{% endblock %}
 
 {% block content %}
-<div class="space-y-8">
+<div class="space-y-6">
 
-    <!-- Header Banner -->
-    <div class="bg-gradient-to-r from-slate-900 via-slate-900 to-slate-950 border border-slate-800 rounded-3xl p-6 sm:p-8 shadow-2xl relative overflow-hidden">
-        <div class="absolute -right-8 -top-8 w-60 h-60 bg-red-600/10 rounded-full blur-3xl pointer-events-none"></div>
-
-        <div class="flex flex-col md:flex-row md:items-center justify-between gap-6">
-            <div>
-                <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-red-950 border border-red-800 text-red-400 text-xs font-semibold uppercase tracking-wider mb-2">
-                    <span class="w-2 h-2 rounded-full bg-red-500"></span>
-                    Head Coach Portal
-                </div>
-                <h1 class="text-3xl sm:text-4xl font-bold font-boxing tracking-wide uppercase text-white">
-                    Coach Tade - Club Dashboard
-                </h1>
-                <p class="text-sm text-slate-400 mt-1">
-                    Monthly overview for <strong class="text-white">{{ current_month|date:"F Y" }}</strong>. Stop manual spreadsheet chasing.
-                </p>
+    <!-- 1. Header & Month Selector -->
+    <div class="bg-slate-900 border border-slate-800 rounded-3xl p-6 sm:p-8 shadow-xl flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div>
+            <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-red-950 border border-red-800 text-red-400 text-xs font-semibold uppercase tracking-wider mb-2">
+                <span class="w-2 h-2 rounded-full bg-red-500"></span>
+                Head Coach Verification Portal
             </div>
+            <h1 class="text-3xl sm:text-4xl font-bold font-boxing tracking-wide uppercase text-white">
+                Monthly Payment Tracker
+            </h1>
+            <p class="text-xs text-slate-400 mt-1">
+                Active cycle: <strong class="text-white">{{ target_month|date:"F Y" }}</strong>. One-click verify or reject proofs.
+            </p>
+        </div>
 
-            <!-- Quick Action Buttons -->
-            <div class="flex flex-wrap items-center gap-3">
-                <a href="{% url 'coach_member_create' %}" class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-red-600 hover:bg-red-700 text-white font-bold text-xs uppercase tracking-wide shadow-lg shadow-red-900/40 transition-colors">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
-                    Add Boxer
-                </a>
-                <a href="{% url 'club_status_page' %}" class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 font-semibold text-xs transition-colors">
-                    <svg class="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
-                    Public Roster
-                </a>
-                <a href="{% url 'coach_club_settings' %}" class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 font-semibold text-xs transition-colors">
-                    <svg class="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
-                    Settings
-                </a>
-            </div>
+        <div class="flex flex-wrap items-center gap-3">
+            <!-- Month Selector Dropdown -->
+            <form method="get" class="flex items-center gap-2">
+                <select name="month" onchange="this.form.submit()"
+                    class="bg-slate-950 border border-slate-800 text-white rounded-xl px-3.5 py-2.5 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-red-500 cursor-pointer">
+                    {% for m in distinct_months %}
+                        <option value="{{ m|date:'Y-m' }}" {% if m == target_month %}selected{% endif %}>
+                            {{ m|date:"F Y" }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </form>
+
+            <!-- Quick Add Member Button -->
+            <button type="button" onclick="openAddMemberModal()"
+                class="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-red-600 hover:bg-red-700 text-white font-bold text-xs uppercase tracking-wide shadow-lg shadow-red-900/40 transition-colors">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+                Add Boxer
+            </button>
         </div>
     </div>
 
-    <!-- KPI Summary Cards -->
+    <!-- 2. Summary Counters -->
     <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <!-- Active Boxers -->
-        <a href="{% url 'coach_member_list' %}" class="bg-slate-900 border border-slate-800 hover:border-slate-700 rounded-2xl p-5 shadow-lg transition-all group">
-            <div class="flex items-center justify-between text-slate-400 mb-2">
-                <span class="text-xs font-semibold uppercase tracking-wider">Active Boxers</span>
-                <svg class="w-5 h-5 text-slate-500 group-hover:text-white transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
-            </div>
-            <div class="text-3xl font-bold font-boxing tracking-wide text-white">{{ active_count }}</div>
-            <div class="text-xs text-slate-500 mt-1">Manage club roster &rarr;</div>
-        </a>
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl p-4 shadow-lg">
+            <span class="text-xs font-semibold uppercase tracking-wider text-slate-400 block mb-1">Total Boxers</span>
+            <div class="text-3xl font-bold font-boxing tracking-wide text-white">{{ total_active }}</div>
+            <span class="text-[11px] text-slate-500">Active roster members</span>
+        </div>
 
         <!-- Paid Members -->
-        <a href="{% url 'coach_member_list' %}?status=PAID" class="bg-emerald-950/20 border border-emerald-800/40 hover:border-emerald-700/60 rounded-2xl p-5 shadow-lg transition-all group">
-            <div class="flex items-center justify-between text-emerald-400 mb-2">
-                <span class="text-xs font-semibold uppercase tracking-wider">Paid Boxers</span>
-                <span class="w-2.5 h-2.5 rounded-full bg-emerald-500"></span>
-            </div>
+        <div class="bg-emerald-950/20 border border-emerald-800/40 rounded-2xl p-4 shadow-lg">
+            <span class="text-xs font-semibold uppercase tracking-wider text-emerald-400 block mb-1">Paid Members</span>
             <div class="text-3xl font-bold font-boxing tracking-wide text-emerald-300">{{ paid_count }}</div>
-            <div class="text-xs text-emerald-500/80 mt-1">Fee verified for {{ current_month|date:"M" }}</div>
-        </a>
+            <span class="text-[11px] text-emerald-500/80">Approved for {{ target_month|date:"M" }}</span>
+        </div>
 
-        <!-- Pending Verification (Urgent) -->
-        <a href="{% url 'coach_pending_submissions' %}" class="bg-amber-950/20 border border-amber-800/50 hover:border-amber-700 rounded-2xl p-5 shadow-lg transition-all group relative">
-            <div class="flex items-center justify-between text-amber-400 mb-2">
-                <span class="text-xs font-semibold uppercase tracking-wider">Pending Review</span>
-                {% if pending_count > 0 %}
-                    <span class="w-2.5 h-2.5 rounded-full bg-amber-500 animate-ping"></span>
-                {% else %}
-                    <span class="w-2.5 h-2.5 rounded-full bg-slate-600"></span>
-                {% endif %}
-            </div>
+        <!-- Pending Review -->
+        <div class="bg-amber-950/20 border border-amber-800/50 rounded-2xl p-4 shadow-lg">
+            <span class="text-xs font-semibold uppercase tracking-wider text-amber-400 block mb-1">Pending Review</span>
             <div class="text-3xl font-bold font-boxing tracking-wide text-amber-300">{{ pending_count }}</div>
-            <div class="text-xs text-amber-400 font-semibold mt-1">Needs verification &rarr;</div>
-        </a>
+            <span class="text-[11px] text-amber-400 font-semibold">Screenshots awaiting check</span>
+        </div>
 
         <!-- Unpaid Members -->
-        <a href="{% url 'coach_member_list' %}?status=UNPAID" class="bg-red-950/20 border border-red-800/40 hover:border-red-700/60 rounded-2xl p-5 shadow-lg transition-all group">
-            <div class="flex items-center justify-between text-red-400 mb-2">
-                <span class="text-xs font-semibold uppercase tracking-wider">Unpaid</span>
-                <span class="w-2.5 h-2.5 rounded-full bg-red-500"></span>
-            </div>
+        <div class="bg-red-950/20 border border-red-800/40 rounded-2xl p-4 shadow-lg">
+            <span class="text-xs font-semibold uppercase tracking-wider text-red-400 block mb-1">Unpaid</span>
             <div class="text-3xl font-bold font-boxing tracking-wide text-red-300">{{ unpaid_count }}</div>
-            <div class="text-xs text-red-500/80 mt-1">Payment outstanding</div>
-        </a>
+            <span class="text-[11px] text-red-500/80">Payment outstanding</span>
+        </div>
     </div>
 
-    <!-- Priority Action Section: Pending Submissions Needing Review -->
-    <div class="bg-slate-900 border border-slate-800 rounded-2xl shadow-xl overflow-hidden">
-        <div class="p-5 border-b border-slate-800 bg-slate-850 flex items-center justify-between">
-            <div class="flex items-center gap-3">
-                <div class="w-8 h-8 rounded-lg bg-amber-500/20 border border-amber-500/40 flex items-center justify-center text-amber-400">
-                    <svg class="w-5 h-5 animate-pulse" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-                </div>
-                <div>
-                    <h2 class="text-lg font-bold font-boxing tracking-wide uppercase text-white leading-tight">
-                        Pending Proofs Awaiting Verification
-                    </h2>
-                    <span class="text-xs text-slate-400">Review transfer screenshots and approve or reject</span>
-                </div>
-            </div>
-            <a href="{% url 'coach_pending_submissions' %}" class="text-xs font-semibold text-red-400 hover:text-red-300 transition-colors">
-                View All Pending ({{ pending_count }}) &rarr;
+    <!-- 3. Toolbar: Search & Filter Tabs -->
+    <div class="bg-slate-900/80 border border-slate-800 rounded-2xl p-4 shadow-lg flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div class="flex flex-wrap items-center gap-1.5 text-xs">
+            <a href="?month={{ target_month|date:'Y-m' }}&status=ALL{% if search_query %}&q={{ search_query }}{% endif %}" class="px-3 py-1.5 rounded-lg font-semibold transition-colors {% if status_filter == 'ALL' %}bg-red-600 text-white{% else %}bg-slate-800 text-slate-400 hover:text-white{% endif %}">
+                All ({{ roster|length }})
+            </a>
+            <a href="?month={{ target_month|date:'Y-m' }}&status=PENDING{% if search_query %}&q={{ search_query }}{% endif %}" class="px-3 py-1.5 rounded-lg font-semibold transition-colors {% if status_filter == 'PENDING' %}bg-amber-600 text-white{% else %}bg-slate-800 text-slate-400 hover:text-white{% endif %}">
+                Pending Review ({{ pending_count }})
+            </a>
+            <a href="?month={{ target_month|date:'Y-m' }}&status=UNPAID{% if search_query %}&q={{ search_query }}{% endif %}" class="px-3 py-1.5 rounded-lg font-semibold transition-colors {% if status_filter == 'UNPAID' %}bg-red-900/80 text-red-200 border border-red-700{% else %}bg-slate-800 text-slate-400 hover:text-white{% endif %}">
+                Unpaid ({{ unpaid_count }})
+            </a>
+            <a href="?month={{ target_month|date:'Y-m' }}&status=PAID{% if search_query %}&q={{ search_query }}{% endif %}" class="px-3 py-1.5 rounded-lg font-semibold transition-colors {% if status_filter == 'PAID' %}bg-emerald-600 text-white{% else %}bg-slate-800 text-slate-400 hover:text-white{% endif %}">
+                Paid ({{ paid_count }})
             </a>
         </div>
 
-        <div class="divide-y divide-slate-800/80">
-            {% if pending_submissions %}
-                {% for sub in pending_submissions %}
-                <div class="p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 hover:bg-slate-800/40 transition-colors">
-                    <div class="flex items-center gap-4">
-                        <!-- Thumbnail preview -->
-                        <div class="w-14 h-14 rounded-xl bg-slate-950 border border-slate-700 overflow-hidden flex-shrink-0 flex items-center justify-center">
-                            {% if sub.screenshot %}
-                                <img src="{{ sub.screenshot.url }}" alt="Screenshot thumbnail" class="w-full h-full object-cover">
-                            {% else %}
-                                <svg class="w-6 h-6 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
-                            {% endif %}
-                        </div>
-
-                        <div>
-                            <div class="flex items-center gap-2">
-                                <a href="{% url 'coach_member_detail' sub.member.id %}" class="text-sm font-bold text-white hover:text-red-400 transition-colors">
-                                    {{ sub.member.display_name }}
-                                </a>
-                                <span class="text-xs px-2 py-0.5 rounded bg-slate-800 text-slate-300 font-semibold">
-                                    {{ sub.subscription.month_display }}
-                                </span>
-                            </div>
-                            <div class="text-xs text-slate-400 mt-1 flex flex-wrap items-center gap-2">
-                                <span>Submitted: {{ sub.submitted_at|date:"M d, H:i" }}</span>
-                                {% if sub.transaction_reference %}
-                                    <span>•</span>
-                                    <span class="font-mono bg-slate-950 px-1.5 py-0.5 rounded text-slate-300">{{ sub.transaction_reference }}</span>
-                                {% endif %}
-                                {% if sub.member.phone_number %}
-                                    <span>•</span>
-                                    <span>{{ sub.member.phone_number }}</span>
-                                {% endif %}
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="flex items-center gap-3 self-end sm:self-center">
-                        <a href="{% url 'coach_review_submission' sub.id %}" class="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-red-600 hover:bg-red-700 text-white font-bold text-xs uppercase tracking-wide transition-colors shadow-md shadow-red-900/40">
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
-                            Inspect & Verify
-                        </a>
-                    </div>
-                </div>
-                {% endfor %}
-            {% else %}
-                <div class="p-12 text-center text-slate-500">
-                    <svg class="w-12 h-12 mx-auto text-emerald-500/50 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-                    <div class="text-sm font-semibold text-slate-300">No Pending Submissions</div>
-                    <div class="text-xs text-slate-500 mt-1">You are all caught up! No payment proofs currently need verification.</div>
-                </div>
-            {% endif %}
-        </div>
+        <form method="get" class="flex items-center gap-2 max-w-sm w-full">
+            <input type="hidden" name="month" value="{{ target_month|date:'Y-m' }}">
+            <input type="hidden" name="status" value="{{ status_filter }}">
+            <input type="text" name="q" value="{{ search_query }}" placeholder="Search by name or phone..."
+                class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2 text-xs text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-red-500">
+            <button type="submit" class="px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold">
+                Search
+            </button>
+        </form>
     </div>
 
-    <!-- Recent Audit Logs Activity -->
-    {% if recent_audits %}
-    <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl">
-        <div class="flex items-center justify-between pb-4 border-b border-slate-800">
-            <h2 class="text-lg font-bold font-boxing tracking-wide uppercase text-white">
-                Recent Audit Trail
-            </h2>
-            <a href="{% url 'coach_audit_logs' %}" class="text-xs text-red-400 hover:text-red-300 font-semibold transition-colors">
-                Full Audit Log &rarr;
-            </a>
-        </div>
-        <div class="mt-4 divide-y divide-slate-800/60">
-            {% for log in recent_audits %}
-            <div class="py-3 flex flex-col sm:flex-row sm:items-center justify-between gap-1 text-xs">
-                <div class="flex items-center gap-2">
-                    <span class="w-1.5 h-1.5 rounded-full bg-slate-500"></span>
-                    <span class="font-semibold text-white">{{ log.get_action_type_display }}</span>
-                    <span class="text-slate-400">{{ log.details }}</span>
-                </div>
-                <div class="text-slate-500 flex-shrink-0">
-                    {{ log.timestamp|date:"M d, Y H:i" }}
-                </div>
-            </div>
-            {% endfor %}
+    <!-- 4. Roster Table: Members, Screenshots & Inline Actions -->
+    <div class="bg-slate-900 border border-slate-800 rounded-3xl shadow-xl overflow-hidden">
+        <div class="overflow-x-auto">
+            <table class="w-full text-left text-sm">
+                <thead>
+                    <tr class="text-xs uppercase text-slate-400 bg-slate-950/60 border-b border-slate-800">
+                        <th class="py-4 px-6 font-semibold">Boxer</th>
+                        <th class="py-4 px-6 font-semibold">{{ target_month|date:"F Y" }} Status</th>
+                        <th class="py-4 px-6 font-semibold">Payment Screenshot</th>
+                        <th class="py-4 px-6 font-semibold text-right">Verification Action</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-800/60">
+                    {% if roster %}
+                        {% for item in roster %}
+                        <tr class="hover:bg-slate-800/30 transition-colors {% if item.status == 'PENDING' %}bg-amber-950/10{% endif %}">
+                            <!-- Boxer info -->
+                            <td class="py-4 px-6">
+                                <div class="flex items-center gap-3">
+                                    <div class="w-9 h-9 rounded-full bg-slate-800 border border-slate-700 flex items-center justify-center font-bold text-xs text-slate-300 flex-shrink-0">
+                                        {{ item.member.display_name|slice:":1" }}
+                                    </div>
+                                    <div>
+                                        <span class="font-bold text-white block">{{ item.member.display_name }}</span>
+                                        <div class="text-[11px] text-slate-400 flex items-center gap-2 mt-0.5">
+                                            <span>@{{ item.member.user.username }}</span>
+                                            {% if item.member.phone_number %}
+                                                <span>•</span>
+                                                <span>{{ item.member.phone_number }}</span>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </div>
+                            </td>
+
+                            <!-- Status Badge -->
+                            <td class="py-4 px-6">
+                                {% if item.status == 'PAID' %}
+                                    <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-bold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
+                                        <span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
+                                        Paid
+                                    </span>
+                                {% elif item.status == 'PENDING' %}
+                                    <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-bold bg-amber-500/20 text-amber-400 border border-amber-500/30">
+                                        <span class="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse"></span>
+                                        Pending Review
+                                    </span>
+                                {% else %}
+                                    <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-bold bg-red-500/20 text-red-400 border border-red-500/30">
+                                        <span class="w-1.5 h-1.5 rounded-full bg-red-400"></span>
+                                        Unpaid
+                                    </span>
+                                {% endif %}
+                            </td>
+
+                            <!-- Payment Screenshot Thumbnail & Preview -->
+                            <td class="py-4 px-6">
+                                {% if item.submission and item.submission.screenshot %}
+                                    <div class="flex items-center gap-3">
+                                        <button type="button" onclick="openImageModal('{{ item.submission.screenshot.url }}', '{{ item.member.display_name|escapejs }}', '{{ item.submission.submitted_at|date:'M d, Y H:i' }}', '{{ item.submission.transaction_reference|default:''|escapejs }}')"
+                                            class="w-12 h-12 rounded-lg bg-slate-950 border border-slate-700 overflow-hidden flex-shrink-0 hover:border-red-500 transition-colors cursor-pointer group relative">
+                                            <img src="{{ item.submission.screenshot.url }}" alt="Proof" class="w-full h-full object-cover">
+                                            <div class="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
+                                                <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+                                            </div>
+                                        </button>
+                                        <div class="text-[11px]">
+                                            <button type="button" onclick="openImageModal('{{ item.submission.screenshot.url }}', '{{ item.member.display_name|escapejs }}', '{{ item.submission.submitted_at|date:'M d, Y H:i' }}', '{{ item.submission.transaction_reference|default:''|escapejs }}')"
+                                                class="font-semibold text-red-400 hover:text-red-300 block text-left">
+                                                View Screenshot &rarr;
+                                            </button>
+                                            <span class="text-slate-500 block text-[10px]">{{ item.submission.submitted_at|date:"M d, H:i" }}</span>
+                                        </div>
+                                    </div>
+                                {% else %}
+                                    <span class="text-xs text-slate-500 italic">No screenshot uploaded</span>
+                                {% endif %}
+                            </td>
+
+                            <!-- Action Buttons -->
+                            <td class="py-4 px-6 text-right">
+                                {% if item.submission and item.status != 'PAID' %}
+                                    <!-- Pending or Unpaid with Screenshot: Quick Approve & Reject Buttons -->
+                                    <div class="inline-flex items-center gap-2">
+                                        <form method="post" action="{% url 'coach_approve_payment' item.submission.id %}" class="inline">
+                                            {% csrf_token %}
+                                            <button type="submit" class="px-3.5 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs uppercase transition-colors shadow-sm">
+                                                Approve
+                                            </button>
+                                        </form>
+                                        <button type="button" onclick="openRejectModal('{{ item.submission.id }}', '{{ item.member.display_name|escapejs }}')"
+                                            class="px-3 py-1.5 rounded-lg bg-red-950/80 hover:bg-red-900 border border-red-800 text-red-300 font-bold text-xs uppercase transition-colors">
+                                            Reject
+                                        </button>
+                                    </div>
+                                {% elif item.status == 'PAID' %}
+                                    <span class="text-xs font-semibold text-emerald-400">✓ Verified</span>
+                                {% else %}
+                                    <span class="text-xs text-slate-500">Awaiting Upload</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    {% else %}
+                        <tr>
+                            <td colspan="4" class="py-12 text-center text-slate-500 text-xs">
+                                No boxers match your filter or search.
+                            </td>
+                        </tr>
+                    {% endif %}
+                </tbody>
+            </table>
         </div>
     </div>
-    {% endif %}
 
 </div>
+
+<!-- MODAL 1: Screenshot Lightbox / Image Preview Modal -->
+<div id="image-modal" class="fixed inset-0 z-50 hidden bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="bg-slate-900 border border-slate-800 rounded-3xl max-w-2xl w-full p-6 shadow-2xl relative">
+        <div class="flex items-center justify-between pb-3 border-b border-slate-800 mb-4">
+            <div>
+                <h3 id="modal-boxer-name" class="text-base font-bold text-white">Boxer Screenshot Proof</h3>
+                <div class="text-xs text-slate-400 mt-0.5">
+                    <span id="modal-submit-time"></span>
+                    <span id="modal-tx-ref" class="ml-2 font-mono text-slate-300"></span>
+                </div>
+            </div>
+            <button type="button" onclick="closeImageModal()" class="text-slate-400 hover:text-white p-2">
+                ✕
+            </button>
+        </div>
+
+        <div class="bg-slate-950 rounded-2xl p-2 flex items-center justify-center max-h-[500px] overflow-hidden">
+            <img id="modal-image-src" src="#" alt="Screenshot" class="max-h-[480px] object-contain rounded-xl">
+        </div>
+
+        <div class="mt-4 flex justify-end">
+            <button type="button" onclick="closeImageModal()" class="px-5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs font-semibold text-white">
+                Close
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- MODAL 2: Rejection Reason Modal -->
+<div id="reject-modal" class="fixed inset-0 z-50 hidden bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="bg-slate-900 border border-slate-800 rounded-3xl max-w-md w-full p-6 shadow-2xl">
+        <h3 class="text-lg font-bold font-boxing tracking-wide uppercase text-white mb-2">
+            Reject Screenshot Submission
+        </h3>
+        <p class="text-xs text-slate-400 mb-4">
+            State the feedback for <strong id="reject-boxer-name" class="text-white"></strong>. The boxer remains Unpaid and will see this reason on their dashboard.
+        </p>
+
+        <form id="reject-form" method="post" action="">
+            {% csrf_token %}
+            <textarea name="rejection_reason" rows="3" required placeholder="e.g. Screenshot blurry, transaction ID not matching, or incorrect transfer amount..."
+                class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-xs text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-red-500"></textarea>
+
+            <div class="mt-4 flex justify-end gap-3">
+                <button type="button" onclick="closeRejectModal()" class="px-4 py-2 rounded-xl bg-slate-800 text-xs font-semibold text-slate-300">
+                    Cancel
+                </button>
+                <button type="submit" class="px-5 py-2 rounded-xl bg-red-600 hover:bg-red-700 text-xs font-bold uppercase text-white">
+                    Confirm Rejection
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- MODAL 3: Add Boxer Modal -->
+<div id="add-member-modal" class="fixed inset-0 z-50 hidden bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="bg-slate-900 border border-slate-800 rounded-3xl max-w-md w-full p-6 shadow-2xl">
+        <div class="flex items-center justify-between pb-3 border-b border-slate-800 mb-4">
+            <h3 class="text-lg font-bold font-boxing tracking-wide uppercase text-white">
+                Register Club Boxer
+            </h3>
+            <button type="button" onclick="closeAddMemberModal()" class="text-slate-400 hover:text-white p-2">✕</button>
+        </div>
+
+        <form method="post" action="{% url 'coach_quick_add_member' %}" class="space-y-4 text-xs">
+            {% csrf_token %}
+
+            <div>
+                <label class="block font-semibold uppercase text-slate-300 mb-1">Full Boxer Name *</label>
+                <input type="text" name="display_name" required placeholder="e.g. Abebe Bikila"
+                    class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-red-500">
+            </div>
+
+            <div>
+                <label class="block font-semibold uppercase text-slate-300 mb-1">Username *</label>
+                <input type="text" name="username" required placeholder="e.g. abebe_b"
+                    class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-red-500">
+            </div>
+
+            <div>
+                <label class="block font-semibold uppercase text-slate-300 mb-1">Phone Number</label>
+                <input type="text" name="phone_number" placeholder="e.g. 0911223344"
+                    class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-red-500">
+            </div>
+
+            <div>
+                <label class="block font-semibold uppercase text-slate-300 mb-1">Temporary Password</label>
+                <input type="text" name="password" value="boxer2026"
+                    class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-white font-mono focus:outline-none focus:ring-2 focus:ring-red-500">
+            </div>
+
+            <div class="pt-3 flex justify-end gap-3 border-t border-slate-800">
+                <button type="button" onclick="closeAddMemberModal()" class="px-4 py-2.5 rounded-xl bg-slate-800 text-slate-300 font-semibold">
+                    Cancel
+                </button>
+                <button type="submit" class="px-5 py-2.5 rounded-xl bg-red-600 hover:bg-red-700 text-white font-bold uppercase tracking-wide">
+                    Create Boxer
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Screenshot Lightbox Modal
+    function openImageModal(imgUrl, boxerName, submitTime, txRef) {
+        document.getElementById('modal-image-src').src = imgUrl;
+        document.getElementById('modal-boxer-name').textContent = boxerName;
+        document.getElementById('modal-submit-time').textContent = 'Submitted: ' + submitTime;
+        document.getElementById('modal-tx-ref').textContent = txRef ? '(Ref: ' + txRef + ')' : '';
+        document.getElementById('image-modal').classList.remove('hidden');
+    }
+    function closeImageModal() {
+        document.getElementById('image-modal').classList.add('hidden');
+    }
+
+    // Rejection Modal
+    function openRejectModal(submissionId, boxerName) {
+        document.getElementById('reject-form').action = '/coach/reject/' + submissionId + '/';
+        document.getElementById('reject-boxer-name').textContent = boxerName;
+        document.getElementById('reject-modal').classList.remove('hidden');
+    }
+    function closeRejectModal() {
+        document.getElementById('reject-modal').classList.add('hidden');
+    }
+
+    // Add Member Modal
+    function openAddMemberModal() {
+        document.getElementById('add-member-modal').classList.remove('hidden');
+    }
+    function closeAddMemberModal() {
+        document.getElementById('add-member-modal').classList.add('hidden');
+    }
+</script>
 {% endblock %}

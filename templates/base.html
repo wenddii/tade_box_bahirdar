@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% block title %}Tade Boxing Club - Subscription Management{% endblock %}</title>
+    <title>{% block title %}Tade Boxing Club - Subscription Tracker{% endblock %}</title>
     <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
@@ -14,9 +14,9 @@
                         brand: {
                             red: '#ef4444',
                             reddark: '#b91c1c',
-                            dark: '#090d16',
-                            card: '#131b2e',
-                            border: '#1f293d',
+                            dark: '#080c14',
+                            card: '#0f172a',
+                            border: '#1e293b',
                         }
                     }
                 }
@@ -25,7 +25,7 @@
     </script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Teko:wght@600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Teko:wght@600;700&display=swap" rel="stylesheet">
     <style>
         body {
             font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
@@ -47,96 +47,52 @@
             background: #334155;
             border-radius: 4px;
         }
-        ::-webkit-scrollbar-thumb:hover {
-            background: #475569;
-        }
     </style>
     {% block extra_head %}{% endblock %}
 </head>
 <body class="flex flex-col min-h-full text-slate-200 antialiased selection:bg-red-600 selection:text-white">
 
-    <!-- Navbar -->
-    <header class="sticky top-0 z-40 bg-slate-900/90 backdrop-blur-md border-b border-slate-800">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <!-- Clean, Focused Navbar -->
+    <header class="sticky top-0 z-40 bg-slate-900/95 backdrop-blur-md border-b border-slate-800">
+        <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="flex items-center justify-between h-16">
                 <!-- Brand / Logo -->
-                <div class="flex items-center gap-3">
-                    <a href="{% url 'dashboard_redirect' %}" class="flex items-center gap-2.5 group">
-                        <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-red-700 to-red-500 flex items-center justify-center text-white shadow-lg shadow-red-900/40 group-hover:scale-105 transition-transform duration-200">
-                            <!-- Boxing Gloves SVG -->
-                            <svg class="w-6 h-6 fill-current" viewBox="0 0 24 24">
-                                <path d="M19.5 7.05c-.38-.05-.76-.05-1.14 0-1.02.13-1.95.66-2.62 1.48C15.11 7.6 14.12 7 13 7c-1.66 0-3 1.34-3 3 0 .2.02.4.06.59C9.28 10.22 8.42 10 7.5 10c-2.48 0-4.5 2.02-4.5 4.5 0 2.21 1.6 4.04 3.71 4.43.3.06.6.07.91.07h9.76c2.55 0 4.62-2.07 4.62-4.62 0-2.3-1.68-4.2-3.89-4.55l1.39-2.78z"/>
-                            </svg>
-                        </div>
-                        <div>
-                            <span class="text-xl font-bold font-boxing tracking-wide text-white group-hover:text-red-400 transition-colors uppercase leading-none block">
-                                {{ club_settings.club_name }}
-                            </span>
-                            <span class="text-[10px] text-slate-400 tracking-wider uppercase font-semibold">
-                                Addis Ababa • Ethiopia
-                            </span>
-                        </div>
-                    </a>
-                </div>
+                <a href="{% url 'dashboard_redirect' %}" class="flex items-center gap-3 group">
+                    <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-red-700 to-red-500 flex items-center justify-center text-white shadow-lg shadow-red-900/40 group-hover:scale-105 transition-transform">
+                        <svg class="w-6 h-6 fill-current" viewBox="0 0 24 24">
+                            <path d="M19.5 7.05c-.38-.05-.76-.05-1.14 0-1.02.13-1.95.66-2.62 1.48C15.11 7.6 14.12 7 13 7c-1.66 0-3 1.34-3 3 0 .2.02.4.06.59C9.28 10.22 8.42 10 7.5 10c-2.48 0-4.5 2.02-4.5 4.5 0 2.21 1.6 4.04 3.71 4.43.3.06.6.07.91.07h9.76c2.55 0 4.62-2.07 4.62-4.62 0-2.3-1.68-4.2-3.89-4.55l1.39-2.78z"/>
+                        </svg>
+                    </div>
+                    <div>
+                        <span class="text-xl font-bold font-boxing tracking-wide text-white group-hover:text-red-400 transition-colors uppercase leading-none block">
+                            {{ club_settings.club_name|default:"Tade Boxing Club" }}
+                        </span>
+                        <span class="text-[10px] text-slate-400 tracking-wider uppercase font-semibold">
+                            Monthly Subscription Tracker
+                        </span>
+                    </div>
+                </a>
 
-                <!-- Desktop Navigation -->
-                <nav class="hidden md:flex items-center gap-1">
+                <!-- User & Navigation Area -->
+                <div class="flex items-center gap-3">
                     {% if user.is_authenticated %}
                         {% if user.is_staff or user.is_superuser %}
-                            <!-- Coach Navigation Links -->
-                            <a href="{% url 'coach_dashboard' %}" class="px-3 py-2 rounded-lg text-sm font-medium transition-colors {% if request.resolver_match.url_name == 'coach_dashboard' %}bg-red-600/20 text-red-400 border border-red-500/30{% else %}text-slate-300 hover:text-white hover:bg-slate-800{% endif %}">
+                            <a href="{% url 'coach_dashboard' %}" class="px-3 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wider bg-red-600/20 text-red-400 border border-red-500/30">
                                 Coach Dashboard
                             </a>
-                            <a href="{% url 'coach_pending_submissions' %}" class="px-3 py-2 rounded-lg text-sm font-medium transition-colors {% if 'submission' in request.resolver_match.url_name %}bg-red-600/20 text-red-400 border border-red-500/30{% else %}text-slate-300 hover:text-white hover:bg-slate-800{% endif %} flex items-center gap-1.5">
-                                Verifications
-                            </a>
-                            <a href="{% url 'coach_member_list' %}" class="px-3 py-2 rounded-lg text-sm font-medium transition-colors {% if 'member' in request.resolver_match.url_name and 'dashboard' not in request.resolver_match.url_name %}bg-red-600/20 text-red-400 border border-red-500/30{% else %}text-slate-300 hover:text-white hover:bg-slate-800{% endif %}">
-                                Boxers
-                            </a>
-                            <a href="{% url 'coach_historical_reports' %}" class="px-3 py-2 rounded-lg text-sm font-medium transition-colors {% if request.resolver_match.url_name == 'coach_historical_reports' %}bg-red-600/20 text-red-400 border border-red-500/30{% else %}text-slate-300 hover:text-white hover:bg-slate-800{% endif %}">
-                                Reports
-                            </a>
-                            <a href="{% url 'coach_club_settings' %}" class="px-3 py-2 rounded-lg text-sm font-medium transition-colors {% if request.resolver_match.url_name == 'coach_club_settings' %}bg-red-600/20 text-red-400 border border-red-500/30{% else %}text-slate-300 hover:text-white hover:bg-slate-800{% endif %}">
-                                Settings
-                            </a>
                         {% else %}
-                            <!-- Member Navigation Links -->
-                            <a href="{% url 'member_dashboard' %}" class="px-3 py-2 rounded-lg text-sm font-medium transition-colors {% if request.resolver_match.url_name == 'member_dashboard' %}bg-red-600/20 text-red-400 border border-red-500/30{% else %}text-slate-300 hover:text-white hover:bg-slate-800{% endif %}">
+                            <a href="{% url 'member_dashboard' %}" class="px-3 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wider bg-slate-800 text-slate-200 hover:text-white">
                                 My Dashboard
-                            </a>
-                            <a href="{% url 'member_payment_submit' %}" class="px-3 py-2 rounded-lg text-sm font-medium transition-colors {% if request.resolver_match.url_name == 'member_payment_submit' %}bg-red-600/20 text-red-400 border border-red-500/30{% else %}text-slate-300 hover:text-white hover:bg-slate-800{% endif %} flex items-center gap-1">
-                                <span class="w-2 h-2 rounded-full bg-red-500 animate-pulse"></span>
-                                Submit Proof
-                            </a>
-                            <a href="{% url 'member_history' %}" class="px-3 py-2 rounded-lg text-sm font-medium transition-colors {% if request.resolver_match.url_name == 'member_history' %}bg-red-600/20 text-red-400 border border-red-500/30{% else %}text-slate-300 hover:text-white hover:bg-slate-800{% endif %}">
-                                My History
-                            </a>
-                            <a href="{% url 'member_profile' %}" class="px-3 py-2 rounded-lg text-sm font-medium transition-colors {% if request.resolver_match.url_name == 'member_profile' %}bg-red-600/20 text-red-400 border border-red-500/30{% else %}text-slate-300 hover:text-white hover:bg-slate-800{% endif %}">
-                                Profile
                             </a>
                         {% endif %}
 
-                        <!-- Public Status Link accessible to all logged-in users -->
-                        <a href="{% url 'club_status_page' %}" class="px-3 py-2 rounded-lg text-sm font-medium transition-colors {% if request.resolver_match.url_name == 'club_status_page' %}bg-red-600/20 text-red-400 border border-red-500/30{% else %}text-slate-300 hover:text-white hover:bg-slate-800{% endif %}">
-                            Club Status
-                        </a>
-                    {% endif %}
-                </nav>
-
-                <!-- User Profile / Auth Area -->
-                <div class="hidden md:flex items-center gap-3">
-                    {% if user.is_authenticated %}
                         <div class="flex items-center gap-2 pl-3 border-l border-slate-800">
-                            <div class="text-right">
+                            <div class="hidden sm:block text-right">
                                 <div class="text-xs font-semibold text-white leading-tight">
                                     {{ user.first_name|default:user.username }}
                                 </div>
-                                <div class="text-[10px] text-slate-400 font-medium">
-                                    {% if user.is_staff or user.is_superuser %}
-                                        <span class="text-red-400 font-bold">Coach Tade</span>
-                                    {% else %}
-                                        Active Boxer
-                                    {% endif %}
+                                <div class="text-[10px] text-slate-400">
+                                    {% if user.is_staff or user.is_superuser %}<span class="text-red-400 font-bold">Coach</span>{% else %}Boxer{% endif %}
                                 </div>
                             </div>
                             <a href="{% url 'logout' %}" title="Log Out" class="p-2 rounded-lg text-slate-400 hover:text-red-400 hover:bg-slate-800 transition-colors">
@@ -146,53 +102,18 @@
                             </a>
                         </div>
                     {% else %}
-                        <a href="{% url 'login' %}" class="px-4 py-2 rounded-lg bg-red-600 hover:bg-red-700 text-white text-sm font-semibold shadow-md transition-colors">
-                            Member Sign In
+                        <a href="{% url 'login' %}" class="px-4 py-2 rounded-xl bg-red-600 hover:bg-red-700 text-white text-xs font-bold uppercase tracking-wider shadow-md transition-colors">
+                            Sign In
                         </a>
                     {% endif %}
                 </div>
-
-                <!-- Mobile Menu Button -->
-                <div class="flex md:hidden items-center">
-                    <button id="mobile-menu-btn" type="button" class="p-2 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 focus:outline-none" aria-label="Toggle Navigation">
-                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
-                        </svg>
-                    </button>
-                </div>
             </div>
-        </div>
-
-        <!-- Mobile Drawer Menu -->
-        <div id="mobile-menu" class="hidden md:hidden border-t border-slate-800 bg-slate-900/95 px-4 pt-3 pb-4 space-y-1">
-            {% if user.is_authenticated %}
-                {% if user.is_staff or user.is_superuser %}
-                    <a href="{% url 'coach_dashboard' %}" class="block px-3 py-2 rounded-lg text-base font-medium text-slate-200 hover:bg-slate-800">Coach Dashboard</a>
-                    <a href="{% url 'coach_pending_submissions' %}" class="block px-3 py-2 rounded-lg text-base font-medium text-slate-200 hover:bg-slate-800">Pending Verifications</a>
-                    <a href="{% url 'coach_member_list' %}" class="block px-3 py-2 rounded-lg text-base font-medium text-slate-200 hover:bg-slate-800">Boxer Members</a>
-                    <a href="{% url 'coach_historical_reports' %}" class="block px-3 py-2 rounded-lg text-base font-medium text-slate-200 hover:bg-slate-800">Monthly Reports</a>
-                    <a href="{% url 'coach_club_settings' %}" class="block px-3 py-2 rounded-lg text-base font-medium text-slate-200 hover:bg-slate-800">Club Settings</a>
-                    <a href="{% url 'coach_audit_logs' %}" class="block px-3 py-2 rounded-lg text-base font-medium text-slate-200 hover:bg-slate-800">Audit Logs</a>
-                {% else %}
-                    <a href="{% url 'member_dashboard' %}" class="block px-3 py-2 rounded-lg text-base font-medium text-slate-200 hover:bg-slate-800">My Dashboard</a>
-                    <a href="{% url 'member_payment_submit' %}" class="block px-3 py-2 rounded-lg text-base font-medium text-red-400 hover:bg-slate-800">Submit Payment Proof</a>
-                    <a href="{% url 'member_history' %}" class="block px-3 py-2 rounded-lg text-base font-medium text-slate-200 hover:bg-slate-800">Payment History</a>
-                    <a href="{% url 'member_profile' %}" class="block px-3 py-2 rounded-lg text-base font-medium text-slate-200 hover:bg-slate-800">Profile</a>
-                {% endif %}
-                <a href="{% url 'club_status_page' %}" class="block px-3 py-2 rounded-lg text-base font-medium text-slate-200 hover:bg-slate-800">Club Payment Status</a>
-                <div class="pt-3 border-t border-slate-800 flex items-center justify-between">
-                    <div class="text-sm text-slate-400">Signed in as <strong class="text-white">{{ user.username }}</strong></div>
-                    <a href="{% url 'logout' %}" class="px-3 py-1.5 rounded bg-slate-800 text-red-400 text-sm font-medium">Log out</a>
-                </div>
-            {% else %}
-                <a href="{% url 'login' %}" class="block px-3 py-2 rounded-lg text-base font-medium text-white bg-red-600 text-center">Member Sign In</a>
-            {% endif %}
         </div>
     </header>
 
     <!-- Messages / Alerts -->
     {% if messages %}
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-4 w-full">
+    <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 mt-4 w-full">
         <div class="space-y-2">
             {% for message in messages %}
             <div class="flex items-center justify-between px-4 py-3 rounded-xl border shadow-lg text-sm font-medium 
@@ -205,10 +126,8 @@
                         <svg class="w-5 h-5 text-emerald-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
                     {% elif message.tags == 'error' %}
                         <svg class="w-5 h-5 text-red-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
-                    {% elif message.tags == 'warning' %}
-                        <svg class="w-5 h-5 text-amber-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
                     {% else %}
-                        <svg class="w-5 h-5 text-blue-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                        <svg class="w-5 h-5 text-amber-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
                     {% endif %}
                     <span>{{ message }}</span>
                 </div>
@@ -221,38 +140,19 @@
     </div>
     {% endif %}
 
-    <!-- Main Content -->
-    <main class="flex-grow max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 w-full">
+    <!-- Main Content Area -->
+    <main class="flex-grow max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-6 w-full">
         {% block content %}{% endblock %}
     </main>
 
-    <!-- Footer -->
-    <footer class="mt-auto bg-slate-950 border-t border-slate-900 py-6 text-center text-xs text-slate-500">
-        <div class="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-3">
-            <div class="flex items-center gap-2">
-                <span class="w-2 h-2 rounded-full bg-red-600"></span>
-                <span>&copy; {% now "Y" %} {{ club_settings.club_name }}. All rights reserved.</span>
-            </div>
-            <div class="text-slate-400">
-                <span>{{ club_settings.location }}</span>
-                {% if club_settings.contact_phone %}
-                    <span class="mx-2">•</span>
-                    <span>{{ club_settings.contact_phone }}</span>
-                {% endif %}
-            </div>
+    <!-- Clean Footer -->
+    <footer class="mt-auto bg-slate-950 border-t border-slate-900 py-4 text-center text-xs text-slate-500">
+        <div class="max-w-6xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-2">
+            <span>&copy; {% now "Y" %} {{ club_settings.club_name }} • Addis Ababa, Ethiopia</span>
+            <span>Fee: {{ club_settings.monthly_subscription_amount }} {{ club_settings.currency_symbol }} • Due by {{ club_settings.payment_deadline_day }}th</span>
         </div>
     </footer>
 
-    <!-- Mobile Nav Toggle JS -->
-    <script>
-        const btn = document.getElementById('mobile-menu-btn');
-        const menu = document.getElementById('mobile-menu');
-        if (btn && menu) {
-            btn.addEventListener('click', () => {
-                menu.classList.toggle('hidden');
-            });
-        }
-    </script>
     {% block extra_js %}{% endblock %}
 </body>
 </html>
