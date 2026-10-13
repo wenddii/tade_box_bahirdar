@@ -37,4 +37,7 @@ urlpatterns = [
     path('coach/reports/', views.coach_historical_reports, name='coach_historical_reports'),
     path('coach/settings/', views.coach_club_settings, name='coach_club_settings'),
     path('coach/audit-logs/', views.coach_audit_logs, name='coach_audit_logs'),
+
+    # 3. Development-only Month Simulation Controls
+    path('dev/simulate-month/', views.dev_simulate_month, name='dev_simulate_month'),
 ]

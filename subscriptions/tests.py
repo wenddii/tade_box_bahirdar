@@ -1,4 +1,5 @@
 import io
+import os
 from datetime import date
 from decimal import Decimal
 from PIL import Image
@@ -20,6 +21,12 @@ from subscriptions.models import (
 )
 from subscriptions.utils import (
     get_current_subscription_month,
+    get_real_subscription_month,
+    normalize_to_month_start,
+    is_simulation_allowed,
+    is_month_simulated,
+    set_simulated_month,
+    clear_simulated_month,
     ensure_subscription_for_member,
     sync_active_members_subscriptions
 )
@@ -526,3 +533,193 @@ class BoxingClubSubscriptionTestCase(TestCase):
         current_month = get_current_subscription_month()
         sub = Subscription.objects.get(member=new_profile, subscription_month=current_month)
         self.assertEqual(sub.status, Subscription.Status.UNPAID)
+
+
+# ==============================================================================
+# 18. Month Simulation Service & Safe Development Month Transitions
+# ==============================================================================
+
+@override_settings(PASSWORD_HASHERS=['django.contrib.auth.hashers.MD5PasswordHasher'])
+class MonthSimulationTestCase(TestCase):
+    def setUp(self):
+        self.client = Client()
+        self.club_settings = ClubSettings.get_settings()
+        self.club_settings.monthly_subscription_amount = Decimal('1500.00')
+        self.club_settings.save()
+
+        self.coach_user = User.objects.create_superuser(
+            username='coach_sim',
+            email='coach_sim@tadebox.com',
+            password='password123'
+        )
+
+        self.user = User.objects.create_user(
+            username='sim_boxer',
+            password='password123'
+        )
+        self.member = MemberProfile.objects.create(
+            user=self.user,
+            display_name='Simulated Boxer',
+            is_active_member=True,
+            join_date=date(2026, 1, 1)
+        )
+
+    def test_normalize_to_month_start(self):
+        self.assertEqual(normalize_to_month_start(date(2026, 10, 15)), date(2026, 10, 1))
+        self.assertEqual(normalize_to_month_start('2026-11'), date(2026, 11, 1))
+        self.assertEqual(normalize_to_month_start('2026-12-25'), date(2026, 12, 1))
+        self.assertEqual(normalize_to_month_start('November 2026'), date(2026, 11, 1))
+        with self.assertRaises(ValueError):
+            normalize_to_month_start('invalid-date-string')
+
+    @override_settings(ENABLE_MONTH_SIMULATION_IN_TESTS=True, SIMULATED_SUBSCRIPTION_MONTH=date(2026, 11, 1))
+    def test_simulation_via_settings_override(self):
+        self.assertTrue(is_simulation_allowed())
+        self.assertTrue(is_month_simulated())
+        self.assertEqual(get_current_subscription_month(), date(2026, 11, 1))
+
+    @override_settings(ENABLE_MONTH_SIMULATION_IN_TESTS=True)
+    def test_simulation_via_env_var(self):
+        original = os.environ.get('SIMULATED_SUBSCRIPTION_MONTH')
+        try:
+            os.environ['SIMULATED_SUBSCRIPTION_MONTH'] = '2026-12'
+            self.assertTrue(is_month_simulated())
+            self.assertEqual(get_current_subscription_month(), date(2026, 12, 1))
+        finally:
+            if original is not None:
+                os.environ['SIMULATED_SUBSCRIPTION_MONTH'] = original
+            else:
+                os.environ.pop('SIMULATED_SUBSCRIPTION_MONTH', None)
+
+    @override_settings(ENABLE_MONTH_SIMULATION_IN_TESTS=True)
+    def test_simulation_via_dev_endpoint_and_session(self):
+        # 1. Simulate November 2026 via GET endpoint
+        res = self.client.get(reverse('dev_simulate_month') + '?month=2026-11')
+        self.assertEqual(res.status_code, 302)
+        session = self.client.session
+        self.assertEqual(session.get('simulated_subscription_month'), '2026-11-01')
+
+        # 2. Log in as member and view dashboard
+        self.client.login(username='sim_boxer', password='password123')
+        dash_res = self.client.get(reverse('member_dashboard'))
+        self.assertEqual(dash_res.status_code, 200)
+        self.assertEqual(dash_res.context['current_month'], date(2026, 11, 1))
+        self.assertEqual(dash_res.context['is_simulated_month'], True)
+
+        # 3. Reset to real date
+        reset_res = self.client.get(reverse('dev_simulate_month') + '?action=reset')
+        self.assertEqual(reset_res.status_code, 302)
+        session = self.client.session
+        self.assertNotIn('simulated_subscription_month', session)
+
+    @override_settings(DEBUG=False, ENABLE_MONTH_SIMULATION_IN_TESTS=False)
+    def test_strict_production_safeguard(self):
+        # Even if settings or env or session has a value, production strictly rejects simulation
+        self.assertFalse(is_simulation_allowed())
+        self.assertFalse(is_month_simulated())
+        self.assertEqual(get_current_subscription_month(), get_real_subscription_month())
+
+        # Calling the dev simulation endpoint in production raises 403 PermissionDenied
+        res = self.client.get(reverse('dev_simulate_month') + '?month=2026-11')
+        self.assertEqual(res.status_code, 403)
+
+    @override_settings(ENABLE_MONTH_SIMULATION_IN_TESTS=True)
+    def test_month_transitions_and_payment_history_preservation(self):
+        """
+        Requirements 3, 4, and 5:
+        - Paid in October appears Unpaid in November if no November payment approved.
+        - Previous months' payment records are NEVER deleted or modified.
+        - Full payment history remains intact across simulated transitions.
+        """
+        # Step 1: Simulate October 2026
+        oct_month = date(2026, 10, 1)
+        with override_settings(SIMULATED_SUBSCRIPTION_MONTH=oct_month):
+            self.assertEqual(get_current_subscription_month(), oct_month)
+            oct_sub = ensure_subscription_for_member(self.member, oct_month)
+            self.assertEqual(oct_sub.status, Subscription.Status.UNPAID)
+
+            # Member uploads screenshot and coach approves for October
+            img = create_test_image_file()
+            subm = PaymentSubmission.objects.create(
+                subscription=oct_sub,
+                member=self.member,
+                screenshot=img,
+                status=PaymentSubmission.Status.PENDING
+            )
+            oct_sub.status = Subscription.Status.PAID
+            oct_sub.paid_at = timezone.now()
+            oct_sub.verified_by = self.coach_user
+            oct_sub.save()
+
+            # Verify October status
+            self.client.login(username='sim_boxer', password='password123')
+            res_oct = self.client.get(reverse('member_dashboard'))
+            self.assertEqual(res_oct.status_code, 200)
+            self.assertEqual(res_oct.context['subscription'].status, Subscription.Status.PAID)
+
+        # Step 2: Transition to November 2026 (No payment made yet)
+        nov_month = date(2026, 11, 1)
+        with override_settings(SIMULATED_SUBSCRIPTION_MONTH=nov_month):
+            self.assertEqual(get_current_subscription_month(), nov_month)
+
+            # Visiting dashboard in November must automatically show UNPAID for November
+            res_nov = self.client.get(reverse('member_dashboard'))
+            self.assertEqual(res_nov.status_code, 200)
+            self.assertEqual(res_nov.context['current_month'], nov_month)
+            self.assertEqual(res_nov.context['subscription'].status, Subscription.Status.UNPAID)
+
+            # Coach dashboard in November must list member under UNPAID
+            self.client.login(username='coach_sim', password='password123')
+            coach_res = self.client.get(reverse('coach_dashboard'))
+            self.assertEqual(coach_res.status_code, 200)
+            self.assertEqual(coach_res.context['unpaid_count'], 1)
+            self.assertEqual(coach_res.context['paid_count'], 0)
+
+            # CRITICAL CHECK: October record MUST still exist and still be PAID!
+            oct_sub_check = Subscription.objects.get(member=self.member, subscription_month=oct_month)
+            self.assertEqual(oct_sub_check.status, Subscription.Status.PAID)
+            self.assertIsNotNone(oct_sub_check.paid_at)
+
+            # Now Member pays for November
+            self.client.login(username='sim_boxer', password='password123')
+            nov_sub = Subscription.objects.get(member=self.member, subscription_month=nov_month)
+            nov_img = create_test_image_file()
+            nov_subm = PaymentSubmission.objects.create(
+                subscription=nov_sub,
+                member=self.member,
+                screenshot=nov_img,
+                status=PaymentSubmission.Status.PENDING
+            )
+            # Coach approves November
+            self.client.login(username='coach_sim', password='password123')
+            app_res = self.client.post(reverse('coach_approve_payment', args=[nov_subm.id]))
+            self.assertEqual(app_res.status_code, 302)
+            nov_sub.refresh_from_db()
+            self.assertEqual(nov_sub.status, Subscription.Status.PAID)
+
+        # Step 3: Transition to December 2026
+        dec_month = date(2026, 12, 1)
+        with override_settings(SIMULATED_SUBSCRIPTION_MONTH=dec_month):
+            self.assertEqual(get_current_subscription_month(), dec_month)
+
+            # Member visits dashboard in December: must be UNPAID
+            self.client.login(username='sim_boxer', password='password123')
+            res_dec = self.client.get(reverse('member_dashboard'))
+            self.assertEqual(res_dec.status_code, 200)
+            self.assertEqual(res_dec.context['subscription'].status, Subscription.Status.UNPAID)
+
+            # CRITICAL CHECK: History check - All past records preserved!
+            all_subs = self.member.subscriptions.order_by('-subscription_month')
+            self.assertEqual(all_subs.count(), 3)
+            self.assertEqual(all_subs[0].subscription_month, dec_month)
+            self.assertEqual(all_subs[0].status, Subscription.Status.UNPAID)
+            self.assertEqual(all_subs[1].subscription_month, nov_month)
+            self.assertEqual(all_subs[1].status, Subscription.Status.PAID)
+            self.assertEqual(all_subs[2].subscription_month, oct_month)
+            self.assertEqual(all_subs[2].status, Subscription.Status.PAID)
+
+            # View Member History page: displays all 3 records
+            hist_res = self.client.get(reverse('member_history'))
+            self.assertEqual(hist_res.status_code, 200)
+            self.assertEqual(len(hist_res.context['subscriptions']), 3)
+

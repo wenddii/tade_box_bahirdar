@@ -5,6 +5,7 @@ from django.contrib import messages
 from django.contrib.auth import login, logout, get_user_model
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.forms import AuthenticationForm
+from django.core.exceptions import PermissionDenied
 from django.db import transaction
 from django.db.models import Q
 from django.shortcuts import render, redirect, get_object_or_404
@@ -31,7 +32,10 @@ from .utils import (
     normalize_to_month_start,
     ensure_subscription_for_member,
     sync_active_members_subscriptions,
-    record_audit
+    record_audit,
+    is_simulation_allowed,
+    set_simulated_month,
+    clear_simulated_month
 )
 
 User = get_user_model()
@@ -721,3 +725,38 @@ def coach_club_settings(request):
 def coach_audit_logs(request):
     logs = AuditLog.objects.select_related('actor', 'target_member').order_by('-timestamp')[:100]
     return render(request, 'subscriptions/coach_audit_logs.html', {'logs': logs})
+
+
+# ==============================================================================
+# Development-only Subscription Month Simulation View
+# ==============================================================================
+
+def dev_simulate_month(request):
+    """
+    Development-only view allowing developers/testers to set or reset the simulated
+    subscription month via HTTP session.
+
+    STRICT PRODUCTION SAFEGUARD:
+    Returns HTTP 403 Forbidden unconditionally in production (DEBUG=False).
+    """
+    if not is_simulation_allowed():
+        raise PermissionDenied("Month simulation is strictly disabled in production.")
+
+    target_month_str = request.POST.get('month') or request.GET.get('month')
+    action = request.POST.get('action') or request.GET.get('action')
+
+    if action == 'reset' or not target_month_str:
+        clear_simulated_month(request)
+        messages.info(request, "Simulated month cleared. Now using the real calendar date (Africa/Addis_Ababa).")
+    else:
+        try:
+            target_date = set_simulated_month(request, target_month_str)
+            messages.success(request, f"Simulated subscription month set to {target_date.strftime('%B %Y')}.")
+        except Exception as e:
+            messages.error(request, f"Invalid date provided for simulation: {e}")
+
+    referer = request.META.get('HTTP_REFERER')
+    if referer:
+        return redirect(referer)
+    return redirect('dashboard_redirect')
+

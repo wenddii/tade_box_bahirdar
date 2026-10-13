@@ -1,4 +1,5 @@
 import os
+import sys
 from decimal import Decimal
 from pathlib import Path
 import dj_database_url
@@ -55,6 +56,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'subscriptions.middleware.SimulationMonthMiddleware',
 ]
 
 ROOT_URLCONF = 'config.urls'
@@ -80,8 +82,16 @@ WSGI_APPLICATION = 'config.wsgi.application'
 
 # Database
 # Uses Neon PostgreSQL if DATABASE_URL is set, otherwise falls back to SQLite
+# During automated tests ('test' in sys.argv), use fast local SQLite for test isolation
 DATABASE_URL = os.getenv('DATABASE_URL')
-if DATABASE_URL:
+if 'test' in sys.argv:
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': ':memory:',
+        }
+    }
+elif DATABASE_URL:
     DATABASES = {
         'default': dj_database_url.config(
             default=DATABASE_URL,
@@ -96,6 +106,11 @@ else:
             'NAME': BASE_DIR / 'db.sqlite3',
         }
     }
+
+# Development Month Simulation Configuration
+# STRICT SECURITY: In production (DEBUG=False), simulation is NEVER allowed.
+SIMULATED_SUBSCRIPTION_MONTH = os.getenv('SIMULATED_SUBSCRIPTION_MONTH', None)
+ENABLE_MONTH_SIMULATION_IN_TESTS = False
 
 # Password validation
 AUTH_PASSWORD_VALIDATORS = [
@@ -129,9 +144,11 @@ MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
 
 # Storages configuration
+# During automated tests, use local FileSystemStorage to ensure hermetic and offline tests
+IS_TESTING = 'test' in sys.argv
 STORAGES = {
     'default': {
-        'BACKEND': 'cloudinary_storage.storage.MediaCloudinaryStorage' if HAS_CLOUDINARY else 'django.core.files.storage.FileSystemStorage',
+        'BACKEND': 'django.core.files.storage.FileSystemStorage' if (IS_TESTING or not HAS_CLOUDINARY) else 'cloudinary_storage.storage.MediaCloudinaryStorage',
     },
     'staticfiles': {
         'BACKEND': 'whitenoise.storage.CompressedManifestStaticFilesStorage' if not DEBUG else 'django.contrib.staticfiles.storage.StaticFilesStorage',
