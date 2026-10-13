@@ -104,7 +104,7 @@
     <!-- 4. Roster Table: Members, Screenshots & Inline Actions -->
     <div class="bg-slate-900 border border-slate-800 rounded-3xl shadow-xl overflow-hidden">
         <div class="overflow-x-auto">
-            <table class="w-full text-left text-sm">
+            <table class="coach-roster-table w-full text-left text-sm">
                 <thead>
                     <tr class="text-xs uppercase text-slate-400 bg-slate-950/60 border-b border-slate-800">
                         <th class="py-4 px-6 font-semibold">Boxer</th>
@@ -218,16 +218,16 @@
                                         </form>
                                     </div>
                                 {% else %}
-                                    <!-- Unpaid: One-click 'Mark Paid (Cash)' button -->
+                                    <!-- Unpaid: One-click 'Paid with Cash' button -->
                                     <div class="inline-flex items-center gap-2">
                                         <form method="post" action="{% url 'coach_manual_subscription_status' item.subscription.id %}" class="inline">
                                             {% csrf_token %}
                                             <input type="hidden" name="status" value="PAID">
                                             <button type="submit"
                                                 class="px-3 py-1.5 rounded-lg bg-emerald-700/80 hover:bg-emerald-600 border border-emerald-600/50 text-white font-bold text-xs uppercase tracking-wide transition-colors shadow-sm flex items-center gap-1.5"
-                                                title="Mark as Paid without screenshot (Cash payment)">
+                                                title="Mark as Paid with Cash (No screenshot required)">
                                                 <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>
-                                                Mark Paid (Cash)
+                                                Paid with Cash
                                             </button>
                                         </form>
                                     </div>

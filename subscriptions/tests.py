@@ -843,4 +843,91 @@ class MonthSimulationTestCase(TestCase):
         sub.refresh_from_db()
         self.assertEqual(sub.status, Subscription.Status.UNPAID)
 
+    @override_settings(DEBUG=False, ENABLE_MONTH_SIMULATION_IN_TESTS=False)
+    def test_paid_with_cash_button_visible_and_functional_with_debug_false(self):
+        """
+        Verify that in production (DEBUG=False):
+        1. 'Paid with Cash' button is rendered on the Coach Dashboard for unpaid members.
+        2. Development simulation controls/banners are NOT exposed.
+        3. Coach can mark payment as Paid (cash), which updates the record and creates an audit log.
+        4. Previous months remain unchanged.
+        5. Member immediately sees Paid status on member dashboard.
+        """
+        current_month = get_current_subscription_month()
+        sub = ensure_subscription_for_member(self.member, current_month)
+        sub.status = Subscription.Status.UNPAID
+        sub.save()
+
+        # Step 1: Coach visits dashboard with DEBUG=False
+        self.client.login(username='coach_sim', password='password123')
+        dash_res = self.client.get(reverse('coach_dashboard'))
+        self.assertEqual(dash_res.status_code, 200)
+
+        # 'Paid with Cash' button is visible in rendered HTML
+        content = dash_res.content.decode('utf-8')
+        self.assertIn('Paid with Cash', content)
+
+        # Dev-only month simulation banner/controls must NOT be present
+        self.assertNotIn('Dev Simulation Active', content)
+        self.assertNotIn('DEV MODE', content)
+
+        # Step 2: Coach clicks 'Paid with Cash'
+        post_res = self.client.post(
+            reverse('coach_manual_subscription_status', args=[sub.id]),
+            {'status': 'PAID'}
+        )
+        self.assertEqual(post_res.status_code, 302)
+
+        # Record is updated to PAID
+        sub.refresh_from_db()
+        self.assertEqual(sub.status, Subscription.Status.PAID)
+        self.assertEqual(sub.verified_by, self.coach_user)
+        self.assertIsNotNone(sub.paid_at)
+
+        # Audit trail is preserved
+        audit = AuditLog.objects.filter(target_member=self.member, action_type=AuditLog.Action.STATUS_MODIFIED).first()
+        self.assertIsNotNone(audit)
+        self.assertEqual(audit.actor, self.coach_user)
+        self.assertIn('Cash', audit.details)
+
+        # Step 3: Member dashboard immediately displays PAID
+        self.client.login(username='sim_boxer', password='password123')
+        member_dash = self.client.get(reverse('member_dashboard'))
+        self.assertEqual(member_dash.status_code, 200)
+        self.assertEqual(member_dash.context['subscription'].status, Subscription.Status.PAID)
+
+    @override_settings(DEBUG=False, ENABLE_MONTH_SIMULATION_IN_TESTS=False)
+    def test_paid_with_cash_action_forbidden_for_unauthorized_users_with_debug_false(self):
+        """
+        Verify that in production (DEBUG=False):
+        1. Unauthenticated users are redirected to login.
+        2. Ordinary members receive HTTP 403 Forbidden.
+        3. Subscription remains Unpaid.
+        """
+        current_month = get_current_subscription_month()
+        sub = ensure_subscription_for_member(self.member, current_month)
+        sub.status = Subscription.Status.UNPAID
+        sub.save()
+
+        # Unauthenticated request
+        self.client.logout()
+        unauth_res = self.client.post(
+            reverse('coach_manual_subscription_status', args=[sub.id]),
+            {'status': 'PAID'}
+        )
+        self.assertEqual(unauth_res.status_code, 302)
+        self.assertIn('login', unauth_res.url)
+
+        # Ordinary member request
+        self.client.login(username='sim_boxer', password='password123')
+        forbidden_res = self.client.post(
+            reverse('coach_manual_subscription_status', args=[sub.id]),
+            {'status': 'PAID'}
+        )
+        self.assertEqual(forbidden_res.status_code, 403)
+
+        sub.refresh_from_db()
+        self.assertEqual(sub.status, Subscription.Status.UNPAID)
+
+
 
