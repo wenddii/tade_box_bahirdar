@@ -23,6 +23,7 @@ urlpatterns = [
     path('coach/dashboard/', views.coach_dashboard, name='coach_dashboard_alt'),
     path('coach/approve/<int:submission_id>/', views.coach_approve_payment, name='coach_approve_payment'),
     path('coach/reject/<int:submission_id>/', views.coach_reject_payment, name='coach_reject_payment'),
+    path('coach/subscriptions/<int:subscription_id>/status/', views.coach_manual_subscription_status, name='coach_manual_subscription_status'),
     path('coach/quick-add/', views.coach_quick_add_member, name='coach_quick_add_member'),
 
     # Backward compatibility routes

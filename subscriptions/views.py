@@ -347,8 +347,10 @@ def coach_dashboard(request):
 
     for m in members_qs:
         sub = subs_map.get(m.id)
-        status = sub.status if sub else 'UNPAID'
-        latest_submission = sub.latest_submission if sub else None
+        if not sub:
+            sub = ensure_subscription_for_member(m, target_month)
+        status = sub.status
+        latest_submission = sub.latest_submission
 
         if m.is_active_member:
             active_count += 1
@@ -476,6 +478,59 @@ def coach_reject_payment(request, submission_id):
         )
 
     messages.warning(request, f"Submission rejected. {member.display_name} remains Unpaid and can submit a new screenshot.")
+    return redirect(request.META.get('HTTP_REFERER', 'coach_dashboard'))
+
+
+@coach_required
+@require_POST
+def coach_manual_subscription_status(request, subscription_id):
+    """
+    Direct inline action on Coach Dashboard:
+    Allows coach to manually change a member's current-month payment status to Paid
+    (e.g. for cash payments without requiring a screenshot) or back to Unpaid.
+    """
+    subscription = get_object_or_404(
+        Subscription.objects.select_related('member'),
+        id=subscription_id
+    )
+    new_status = request.POST.get('status', '').upper()
+    member = subscription.member
+    now = timezone.now()
+
+    if new_status == Subscription.Status.PAID:
+        with transaction.atomic():
+            subscription.status = Subscription.Status.PAID
+            subscription.paid_at = now
+            subscription.verified_by = request.user
+            subscription.save(update_fields=['status', 'paid_at', 'verified_by', 'updated_at'])
+
+            record_audit(
+                actor=request.user,
+                action_type=AuditLog.Action.STATUS_MODIFIED,
+                details=f"Manually confirmed payment (Cash) for {member.display_name} ({subscription.month_display}).",
+                target_member=member,
+                request=request
+            )
+        messages.success(request, f"✓ {member.display_name} marked as PAID for {subscription.month_display} (Cash payment confirmed).")
+
+    elif new_status == Subscription.Status.UNPAID:
+        with transaction.atomic():
+            subscription.status = Subscription.Status.UNPAID
+            subscription.paid_at = None
+            subscription.verified_by = None
+            subscription.save(update_fields=['status', 'paid_at', 'verified_by', 'updated_at'])
+
+            record_audit(
+                actor=request.user,
+                action_type=AuditLog.Action.STATUS_MODIFIED,
+                details=f"Manually set status to UNPAID for {member.display_name} ({subscription.month_display}).",
+                target_member=member,
+                request=request
+            )
+        messages.info(request, f"{member.display_name} status set to UNPAID for {subscription.month_display}.")
+    else:
+        messages.error(request, "Invalid status requested.")
+
     return redirect(request.META.get('HTTP_REFERER', 'coach_dashboard'))
 
 

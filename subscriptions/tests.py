@@ -723,3 +723,124 @@ class MonthSimulationTestCase(TestCase):
             self.assertEqual(hist_res.status_code, 200)
             self.assertEqual(len(hist_res.context['subscriptions']), 3)
 
+    def test_coach_manual_status_change_to_paid_without_screenshot(self):
+        """
+        Coach marks a member as Paid for cash without requiring a screenshot.
+        """
+        current_month = get_current_subscription_month()
+        sub = ensure_subscription_for_member(self.member, current_month)
+        self.assertEqual(sub.status, Subscription.Status.UNPAID)
+        self.assertEqual(sub.submissions.count(), 0)
+
+        # Coach logs in and marks as Paid
+        self.client.login(username='coach_sim', password='password123')
+        res = self.client.post(
+            reverse('coach_manual_subscription_status', args=[sub.id]),
+            {'status': 'PAID'}
+        )
+        self.assertEqual(res.status_code, 302)
+
+        sub.refresh_from_db()
+        self.assertEqual(sub.status, Subscription.Status.PAID)
+        self.assertEqual(sub.verified_by, self.coach_user)
+        self.assertIsNotNone(sub.paid_at)
+        # Verify no screenshot was required or created
+        self.assertEqual(sub.submissions.count(), 0)
+
+        # Verify audit log recorded coach and change
+        log = AuditLog.objects.filter(target_member=self.member, action_type=AuditLog.Action.STATUS_MODIFIED).first()
+        self.assertIsNotNone(log)
+        self.assertEqual(log.actor, self.coach_user)
+        self.assertIn("Cash", log.details)
+
+        # Member sees Paid immediately on member dashboard
+        self.client.login(username='sim_boxer', password='password123')
+        dash_res = self.client.get(reverse('member_dashboard'))
+        self.assertEqual(dash_res.status_code, 200)
+        self.assertEqual(dash_res.context['subscription'].status, Subscription.Status.PAID)
+
+    def test_coach_manual_status_change_back_to_unpaid(self):
+        """
+        Coach changes a member's status back to Unpaid if necessary.
+        """
+        current_month = get_current_subscription_month()
+        sub = ensure_subscription_for_member(self.member, current_month)
+        sub.status = Subscription.Status.PAID
+        sub.paid_at = timezone.now()
+        sub.verified_by = self.coach_user
+        sub.save()
+
+        self.client.login(username='coach_sim', password='password123')
+        res = self.client.post(
+            reverse('coach_manual_subscription_status', args=[sub.id]),
+            {'status': 'UNPAID'}
+        )
+        self.assertEqual(res.status_code, 302)
+
+        sub.refresh_from_db()
+        self.assertEqual(sub.status, Subscription.Status.UNPAID)
+        self.assertIsNone(sub.paid_at)
+        self.assertIsNone(sub.verified_by)
+
+        # Member sees Unpaid immediately on member dashboard
+        self.client.login(username='sim_boxer', password='password123')
+        dash_res = self.client.get(reverse('member_dashboard'))
+        self.assertEqual(dash_res.status_code, 200)
+        self.assertEqual(dash_res.context['subscription'].status, Subscription.Status.UNPAID)
+
+    def test_manual_status_change_preserves_previous_months(self):
+        """
+        Manual status change in current month strictly leaves previous months unchanged.
+        """
+        prev_month = date(2026, 9, 1)
+        curr_month = date(2026, 10, 1)
+
+        prev_sub = ensure_subscription_for_member(self.member, prev_month)
+        prev_sub.status = Subscription.Status.PAID
+        prev_sub.paid_at = timezone.now()
+        prev_sub.save()
+
+        curr_sub = ensure_subscription_for_member(self.member, curr_month)
+        curr_sub.status = Subscription.Status.UNPAID
+        curr_sub.save()
+
+        # Coach marks current month as Paid
+        self.client.login(username='coach_sim', password='password123')
+        self.client.post(
+            reverse('coach_manual_subscription_status', args=[curr_sub.id]),
+            {'status': 'PAID'}
+        )
+
+        curr_sub.refresh_from_db()
+        prev_sub.refresh_from_db()
+        self.assertEqual(curr_sub.status, Subscription.Status.PAID)
+        self.assertEqual(prev_sub.status, Subscription.Status.PAID)
+
+        # Now coach reverts current month to Unpaid
+        self.client.post(
+            reverse('coach_manual_subscription_status', args=[curr_sub.id]),
+            {'status': 'UNPAID'}
+        )
+
+        curr_sub.refresh_from_db()
+        prev_sub.refresh_from_db()
+        self.assertEqual(curr_sub.status, Subscription.Status.UNPAID)
+        self.assertEqual(prev_sub.status, Subscription.Status.PAID)  # Unchanged!
+
+    def test_unauthorized_user_cannot_change_manual_status(self):
+        """
+        Regular boxer/member cannot access coach_manual_subscription_status.
+        """
+        current_month = get_current_subscription_month()
+        sub = ensure_subscription_for_member(self.member, current_month)
+
+        self.client.login(username='sim_boxer', password='password123')
+        res = self.client.post(
+            reverse('coach_manual_subscription_status', args=[sub.id]),
+            {'status': 'PAID'}
+        )
+        self.assertEqual(res.status_code, 403)  # HTTP 403 Forbidden (not coach)
+        sub.refresh_from_db()
+        self.assertEqual(sub.status, Subscription.Status.UNPAID)
+
+

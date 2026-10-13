@@ -176,13 +176,20 @@
                                         </div>
                                     </div>
                                 {% else %}
-                                    <span class="text-xs text-slate-500 italic">No screenshot uploaded</span>
+                                    {% if item.status == 'PAID' %}
+                                        <span class="inline-flex items-center gap-1.5 text-xs text-emerald-400 font-medium">
+                                            <svg class="w-4 h-4 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
+                                            Cash payment (No screenshot)
+                                        </span>
+                                    {% else %}
+                                        <span class="text-xs text-slate-500 italic">No screenshot uploaded</span>
+                                    {% endif %}
                                 {% endif %}
                             </td>
 
                             <!-- Action Buttons -->
                             <td class="py-4 px-6 text-right">
-                                {% if item.submission and item.status != 'PAID' %}
+                                {% if item.status == 'PENDING' and item.submission %}
                                     <!-- Pending or Unpaid with Screenshot: Quick Approve & Reject Buttons -->
                                     <div class="inline-flex items-center gap-2">
                                         <form method="post" action="{% url 'coach_approve_payment' item.submission.id %}" class="inline">
@@ -197,9 +204,33 @@
                                         </button>
                                     </div>
                                 {% elif item.status == 'PAID' %}
-                                    <span class="text-xs font-semibold text-emerald-400">✓ Verified</span>
+                                    <!-- Paid: Show Verified indicator and one-click 'Mark Unpaid' option -->
+                                    <div class="inline-flex items-center gap-2.5">
+                                        <span class="text-xs font-semibold text-emerald-400">✓ Paid</span>
+                                        <form method="post" action="{% url 'coach_manual_subscription_status' item.subscription.id %}" class="inline">
+                                            {% csrf_token %}
+                                            <input type="hidden" name="status" value="UNPAID">
+                                            <button type="submit" onclick="return confirm('Change status for {{ item.member.display_name|escapejs }} to UNPAID?')"
+                                                class="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-red-950/80 hover:text-red-300 border border-slate-700 hover:border-red-800 text-slate-400 font-medium text-xs transition-colors"
+                                                title="Change status back to Unpaid">
+                                                Mark Unpaid
+                                            </button>
+                                        </form>
+                                    </div>
                                 {% else %}
-                                    <span class="text-xs text-slate-500">Awaiting Upload</span>
+                                    <!-- Unpaid: One-click 'Mark Paid (Cash)' button -->
+                                    <div class="inline-flex items-center gap-2">
+                                        <form method="post" action="{% url 'coach_manual_subscription_status' item.subscription.id %}" class="inline">
+                                            {% csrf_token %}
+                                            <input type="hidden" name="status" value="PAID">
+                                            <button type="submit"
+                                                class="px-3 py-1.5 rounded-lg bg-emerald-700/80 hover:bg-emerald-600 border border-emerald-600/50 text-white font-bold text-xs uppercase tracking-wide transition-colors shadow-sm flex items-center gap-1.5"
+                                                title="Mark as Paid without screenshot (Cash payment)">
+                                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>
+                                                Mark Paid (Cash)
+                                            </button>
+                                        </form>
+                                    </div>
                                 {% endif %}
                             </td>
                         </tr>
